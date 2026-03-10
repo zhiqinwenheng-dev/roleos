@@ -27,6 +27,42 @@ interface CommunityProps {
   lang: Language;
 }
 
+type LocalCommentsMap = Record<string, Comment[]>;
+
+const LOCAL_POSTS_KEY = 'roleos.community.posts';
+const LOCAL_COMMENTS_KEY = 'roleos.community.comments';
+
+const safeJsonParse = <T,>(value: string | null, fallback: T): T => {
+  if (!value) {
+    return fallback;
+  }
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+};
+
+const readLocalPosts = (): Post[] => {
+  return safeJsonParse<Post[]>(window.localStorage.getItem(LOCAL_POSTS_KEY), []);
+};
+
+const readLocalComments = (): LocalCommentsMap => {
+  return safeJsonParse<LocalCommentsMap>(window.localStorage.getItem(LOCAL_COMMENTS_KEY), {});
+};
+
+const saveLocalData = (posts: Post[], commentsMap: LocalCommentsMap) => {
+  window.localStorage.setItem(LOCAL_POSTS_KEY, JSON.stringify(posts));
+  window.localStorage.setItem(LOCAL_COMMENTS_KEY, JSON.stringify(commentsMap));
+};
+
+const withCommentCounts = (posts: Post[], commentsMap: LocalCommentsMap) => {
+  return posts.map((post) => ({
+    ...post,
+    comment_count: commentsMap[String(post.id)]?.length || post.comment_count || 0,
+  }));
+};
+
 const Community: React.FC<CommunityProps> = ({ lang }) => {
   const t = TRANSLATIONS[lang].community;
   const [posts, setPosts] = useState<Post[]>([]);
@@ -41,6 +77,8 @@ const Community: React.FC<CommunityProps> = ({ lang }) => {
   const [submittingPost, setSubmittingPost] = useState(false);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [communityError, setCommunityError] = useState('');
+  const [communityNotice, setCommunityNotice] = useState('');
+  const [localMode, setLocalMode] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
 
   const upsertPost = (incoming: Post) => {
@@ -48,10 +86,31 @@ const Community: React.FC<CommunityProps> = ({ lang }) => {
     setSelectedPost((prev) => (prev && prev.id === incoming.id ? incoming : prev));
   };
 
+  const enableLocalMode = () => {
+    const localPosts = readLocalPosts();
+    const localComments = readLocalComments();
+    setPosts(withCommentCounts(localPosts, localComments));
+    setLocalMode(true);
+    setCommunityNotice(
+      lang === 'zh'
+        ? '社区接口不可用，已切换为本地模式（数据存储在当前浏览器）。'
+        : 'Community API unavailable, switched to local browser mode.',
+    );
+  };
+
   useEffect(() => {
-    fetchPosts();
-    connectWebSocket();
-    return () => socketRef.current?.close();
+    let active = true;
+    const init = async () => {
+      const apiAvailable = await fetchPosts();
+      if (active && apiAvailable) {
+        connectWebSocket();
+      }
+    };
+    init();
+    return () => {
+      active = false;
+      socketRef.current?.close();
+    };
   }, []);
 
   const connectWebSocket = () => {
@@ -79,14 +138,23 @@ const Community: React.FC<CommunityProps> = ({ lang }) => {
     setCommunityError('');
     try {
       const res = await fetch('/api/posts');
-      if (!res.ok) {
-        setCommunityError(lang === 'zh' ? '加载帖子失败，请稍后重试。' : 'Failed to load posts.');
-        return;
+      const contentType = res.headers.get('content-type') || '';
+      if (!res.ok || !contentType.includes('application/json')) {
+        enableLocalMode();
+        return false;
       }
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
+      if (!data) {
+        enableLocalMode();
+        return false;
+      }
       setPosts(data || []);
+      setLocalMode(false);
+      setCommunityNotice('');
+      return true;
     } catch {
-      setCommunityError(lang === 'zh' ? '加载帖子失败，请检查网络。' : 'Failed to load posts.');
+      enableLocalMode();
+      return false;
     } finally {
       setLoadingPosts(false);
     }
@@ -94,16 +162,109 @@ const Community: React.FC<CommunityProps> = ({ lang }) => {
 
   const fetchComments = async (postId: number) => {
     setCommunityError('');
+    if (localMode) {
+      const commentsMap = readLocalComments();
+      setComments(commentsMap[String(postId)] || []);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/posts/${postId}/comments`);
-      if (!res.ok) {
-        setCommunityError(lang === 'zh' ? '加载评论失败，请稍后重试。' : 'Failed to load comments.');
+      const contentType = res.headers.get('content-type') || '';
+      if (!res.ok || !contentType.includes('application/json')) {
+        enableLocalMode();
+        const commentsMap = readLocalComments();
+        setComments(commentsMap[String(postId)] || []);
         return;
       }
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
+      if (!data) {
+        enableLocalMode();
+        const commentsMap = readLocalComments();
+        setComments(commentsMap[String(postId)] || []);
+        return;
+      }
       setComments(data || []);
     } catch {
-      setCommunityError(lang === 'zh' ? '加载评论失败，请检查网络。' : 'Failed to load comments.');
+      enableLocalMode();
+      const commentsMap = readLocalComments();
+      setComments(commentsMap[String(postId)] || []);
+    }
+  };
+
+  const createPostLocal = () => {
+    const localPosts = readLocalPosts();
+    const localComments = readLocalComments();
+    const nextId = localPosts.length > 0 ? Math.max(...localPosts.map((p) => p.id)) + 1 : 1;
+    const createdPost: Post = {
+      id: nextId,
+      title: newPost.title.trim(),
+      content: newPost.content.trim(),
+      author: newPost.author.trim(),
+      category: newPost.category,
+      likes: 0,
+      status: 'open',
+      comment_count: 0,
+      created_at: new Date().toISOString(),
+    };
+    const nextPosts = [createdPost, ...localPosts];
+    saveLocalData(nextPosts, localComments);
+    upsertPost(createdPost);
+    setNewPost({ title: '', content: '', author: '', category: 'general' });
+    setIsModalOpen(false);
+  };
+
+  const createCommentLocal = () => {
+    if (!selectedPost) {
+      return;
+    }
+    const localPosts = readLocalPosts();
+    const localComments = readLocalComments();
+    const postId = selectedPost.id;
+    const currentComments = localComments[String(postId)] || [];
+    const nextCommentId = currentComments.length > 0 ? Math.max(...currentComments.map((c) => c.id)) + 1 : 1;
+    const createdComment: Comment = {
+      id: nextCommentId,
+      post_id: postId,
+      content: newComment.content.trim(),
+      author: newComment.author.trim(),
+      created_at: new Date().toISOString(),
+    };
+    const updatedComments = [...currentComments, createdComment];
+    localComments[String(postId)] = updatedComments;
+    const updatedPosts = localPosts.map((post) =>
+      post.id === postId ? { ...post, comment_count: updatedComments.length } : post,
+    );
+    saveLocalData(updatedPosts, localComments);
+    setComments(updatedComments);
+    setPosts(withCommentCounts(updatedPosts, localComments));
+    setSelectedPost((prev) => (prev ? { ...prev, comment_count: updatedComments.length } : prev));
+    setNewComment({ content: '', author: '' });
+  };
+
+  const likePostLocal = (postId: number) => {
+    const localPosts = readLocalPosts();
+    const localComments = readLocalComments();
+    const updatedPosts = localPosts.map((post) =>
+      post.id === postId ? { ...post, likes: (post.likes || 0) + 1 } : post,
+    );
+    saveLocalData(updatedPosts, localComments);
+    const target = updatedPosts.find((item) => item.id === postId);
+    if (target) {
+      upsertPost(target);
+    }
+  };
+
+  const updateStatusLocal = (postId: number, status: string) => {
+    const localPosts = readLocalPosts();
+    const localComments = readLocalComments();
+    const updatedPosts = localPosts.map((post) =>
+      post.id === postId ? { ...post, status } : post,
+    );
+    saveLocalData(updatedPosts, localComments);
+    const target = updatedPosts.find((item) => item.id === postId);
+    if (target) {
+      upsertPost(target);
     }
   };
 
@@ -113,24 +274,35 @@ const Community: React.FC<CommunityProps> = ({ lang }) => {
 
     setSubmittingPost(true);
     setCommunityError('');
+    if (localMode) {
+      createPostLocal();
+      setSubmittingPost(false);
+      return;
+    }
+
     try {
       const res = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newPost),
       });
-
-      const payload = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setCommunityError(payload?.error || (lang === 'zh' ? '发帖失败，请重试。' : 'Failed to create post.'));
+      const contentType = res.headers.get('content-type') || '';
+      const payload = contentType.includes('application/json') ? await res.json().catch(() => null) : null;
+      if (!res.ok || !payload) {
+        enableLocalMode();
+        createPostLocal();
         return;
       }
 
       upsertPost(payload as Post);
+      const localComments = readLocalComments();
+      const localPosts = [payload as Post, ...readLocalPosts().filter((p) => p.id !== (payload as Post).id)];
+      saveLocalData(localPosts, localComments);
       setNewPost({ title: '', content: '', author: '', category: 'general' });
       setIsModalOpen(false);
     } catch {
-      setCommunityError(lang === 'zh' ? '发帖失败，请检查网络。' : 'Failed to create post.');
+      enableLocalMode();
+      createPostLocal();
     } finally {
       setSubmittingPost(false);
     }
@@ -142,23 +314,33 @@ const Community: React.FC<CommunityProps> = ({ lang }) => {
 
     setSubmittingComment(true);
     setCommunityError('');
+    if (localMode) {
+      createCommentLocal();
+      setSubmittingComment(false);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/posts/${selectedPost.id}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newComment),
       });
-
-      const payload = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setCommunityError(payload?.error || (lang === 'zh' ? '评论失败，请重试。' : 'Failed to comment.'));
+      const contentType = res.headers.get('content-type') || '';
+      const payload = contentType.includes('application/json') ? await res.json().catch(() => null) : null;
+      if (!res.ok || !payload) {
+        enableLocalMode();
+        createCommentLocal();
         return;
       }
 
       setComments(payload || []);
       setNewComment({ content: '', author: '' });
+      const updatedPost = { ...selectedPost, comment_count: (payload || []).length };
+      upsertPost(updatedPost);
     } catch {
-      setCommunityError(lang === 'zh' ? '评论失败，请检查网络。' : 'Failed to comment.');
+      enableLocalMode();
+      createCommentLocal();
     } finally {
       setSubmittingComment(false);
     }
@@ -166,24 +348,50 @@ const Community: React.FC<CommunityProps> = ({ lang }) => {
 
   const handleLike = async (e: React.MouseEvent, postId: number) => {
     e.stopPropagation();
-    const res = await fetch(`/api/posts/${postId}/like`, { method: 'POST' });
-    if (!res.ok) {
+    if (localMode) {
+      likePostLocal(postId);
       return;
     }
-    const updatedPost = await res.json();
+
+    const res = await fetch(`/api/posts/${postId}/like`, { method: 'POST' });
+    const contentType = res.headers.get('content-type') || '';
+    if (!res.ok || !contentType.includes('application/json')) {
+      enableLocalMode();
+      likePostLocal(postId);
+      return;
+    }
+    const updatedPost = await res.json().catch(() => null);
+    if (!updatedPost) {
+      enableLocalMode();
+      likePostLocal(postId);
+      return;
+    }
     upsertPost(updatedPost);
   };
 
   const handleStatusUpdate = async (postId: number, status: string) => {
+    if (localMode) {
+      updateStatusLocal(postId, status);
+      return;
+    }
+
     const res = await fetch(`/api/posts/${postId}/status`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     });
-    if (!res.ok) {
+    const contentType = res.headers.get('content-type') || '';
+    if (!res.ok || !contentType.includes('application/json')) {
+      enableLocalMode();
+      updateStatusLocal(postId, status);
       return;
     }
-    const updatedPost = await res.json();
+    const updatedPost = await res.json().catch(() => null);
+    if (!updatedPost) {
+      enableLocalMode();
+      updateStatusLocal(postId, status);
+      return;
+    }
     upsertPost(updatedPost);
   };
 
@@ -224,6 +432,12 @@ const Community: React.FC<CommunityProps> = ({ lang }) => {
       <div className="absolute inset-0 bg-grid opacity-[0.02] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {communityNotice && (
+          <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700">
+            {communityNotice}
+          </div>
+        )}
+
         {communityError && (
           <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
             {communityError}
