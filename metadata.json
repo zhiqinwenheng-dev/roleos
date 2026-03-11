@@ -1,5 +1,5 @@
 {
-  "name": "RoleOS.ai",
-  "description": "Open-source Roles, Kits, and Teams for OpenClaw. Turn agents and skills into productive Roles.",
+  "name": "RoleOS",
+  "description": "标准化 AI 工作系统 - 把 OpenClaw 变成可部署、可协作、可运营的标准化工作流 (SE/CE 版)。",
   "requestFramePermissions": []
 }

@@ -1,20 +1,61 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# RoleOS Website Frontend
 
-# Run and deploy your AI Studio app
+This frontend is connected to the RoleOS backend APIs and provides:
 
-This contains everything you need to run your app locally.
+- Official website pages (conversion)
+- Rc Cloud entry and console (`/app/cloud`)
+- RS self-hosted download and onboarding pages
+- Unified docs center (RS / Rc terminology)
 
-View your app in AI Studio: https://ai.studio/apps/96cd82d2-90cf-45ed-9da4-ffa0c74e6d56
+## Unified terminology
 
-## Run Locally
+- `RS` = `RoleOS Self-Hosted`
+- `Rc` = `RoleOS Cloud`
 
-**Prerequisites:**  Node.js
+No `B/C` naming is used in current website content.
 
+## Local development
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Backend should run first on `http://127.0.0.1:3000`.
+
+Install:
+
+```bash
+npm install
+```
+
+Run frontend:
+
+```bash
+npm run dev
+```
+
+Default URL:
+
+- `http://127.0.0.1:5173`
+
+## Build & type check
+
+```bash
+npm run lint
+npm run build
+```
+
+## Environment variables
+
+Copy `.env.example` and configure:
+
+- `VITE_ROLEOS_API_BASE_URL`
+- `VITE_ROLEOS_API_PROXY_TARGET` (default `http://127.0.0.1:3000`)
+
+## Main routes
+
+- `/` Home
+- `/products`
+- `/products/self-hosted` (RS)
+- `/app/cloud` (Rc)
+- `/app/cloud/onboarding`
+- `/app/cloud/session`
+- `/pricing`
+- `/docs`
+- `/login` / `/signup`
