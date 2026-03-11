@@ -59,3 +59,22 @@ Copy `.env.example` and configure:
 - `/pricing`
 - `/docs`
 - `/login` / `/signup`
+
+## Origin API deployment package
+
+For production Rc backend (auth/workspace/run/billing/admin), use:
+
+- `/origin-api`
+
+This folder contains:
+
+- Cloud API source code
+- `docker-compose.yml` + `Dockerfile`
+- Supabase migrations
+- one-click deployment scripts (Linux/Windows)
+
+Tencent Cloud quick path:
+
+1. Clone this repo on server
+2. `cd origin-api`
+3. Run `bash scripts/cloud-one-click-deploy.sh`

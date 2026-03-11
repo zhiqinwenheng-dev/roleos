@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://roleos.local/schemas/team.v1.json",
+  "title": "TeamSpecV1",
+  "type": "object",
+  "required": [
+    "id",
+    "kind",
+    "specVersion",
+    "lifecycle",
+    "title",
+    "description",
+    "updatedAt",
+    "participatingRoles",
+    "requiredKits",
+    "handoffOrder",
+    "humanCheckpoints",
+    "successCriteria"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "kind": {
+      "const": "team"
+    },
+    "specVersion": {
+      "const": "v1"
+    },
+    "lifecycle": {
+      "enum": [
+        "draft",
+        "validated",
+        "active",
+        "deprecated"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "participatingRoles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "requiredKits": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "handoffOrder": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "humanCheckpoints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "successCriteria": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "content-team-mvp",
+  "kind": "team",
+  "specVersion": "v1",
+  "lifecycle": "active",
+  "title": "Content Team MVP",
+  "description": "One-role team for cloud MVP orchestration.",
+  "updatedAt": "2026-03-11T00:00:00.000Z",
+  "participatingRoles": [
+    "content-operator"
+  ],
+  "requiredKits": [
+    "content-starter-kit"
+  ],
+  "handoffOrder": [
+    "content-operator"
+  ],
+  "humanCheckpoints": [
+    "review before publish"
+  ],
+  "successCriteria": [
+    "output is publish-ready",
+    "tone remains consistent"
+  ]
+}

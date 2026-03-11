@@ -1,0 +1,65 @@
+{
+  "name": "roleosbc",
+  "version": "1.0.0",
+  "description": "RoleOS B/C dual-track MVP implementation",
+  "type": "module",
+  "main": "dist/src/index.js",
+  "bin": {
+    "roleos": "dist/src/cli/main.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "dev:cli": "tsx src/cli/main.ts",
+    "dev:cloud": "tsx src/cloud/server.ts",
+    "dev:stack:start": "powershell -ExecutionPolicy Bypass -File scripts/start-local-web.ps1",
+    "dev:stack:check": "powershell -ExecutionPolicy Bypass -File scripts/check-local-web.ps1",
+    "dev:stack:stop": "powershell -ExecutionPolicy Bypass -File scripts/stop-local-web.ps1",
+    "deploy:oneclick:sh": "bash scripts/one-click-deploy.sh",
+    "deploy:oneclick:ps": "powershell -ExecutionPolicy Bypass -File scripts/one-click-deploy.ps1",
+    "deploy:cloud:oneclick:sh": "bash scripts/cloud-one-click-deploy.sh",
+    "deploy:cloud:oneclick:ps": "powershell -ExecutionPolicy Bypass -File scripts/cloud-one-click-deploy.ps1",
+    "release:binary": "npm run build && node scripts/build-sea.mjs",
+    "release:binaries": "npm run release:binary",
+    "start:cli": "node dist/src/cli/main.js",
+    "start:cloud": "node dist/src/cloud/server.js",
+    "supabase:preflight": "node scripts/supabase-preflight.mjs",
+    "supabase:smoke": "node scripts/supabase-smoke.mjs",
+    "go-live:verify": "node scripts/release-readiness.mjs",
+    "go-live:remote-smoke": "node scripts/remote-smoke.mjs",
+    "go-live:autopilot": "node scripts/go-live-autopilot.mjs",
+    "deploy:cloudflare:edge": "node scripts/deploy-cloudflare-edge.mjs",
+    "deploy:cloudflare:pages": "node scripts/deploy-cloudflare-pages.mjs",
+    "job:reconcile": "tsx src/jobs/reconcilePayments.ts",
+    "job:reconcile:build": "node dist/src/jobs/reconcilePayments.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "roleos",
+    "mvp",
+    "self-hosted",
+    "cloud"
+  ],
+  "author": "RoleOS Team",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.50.5",
+    "bcryptjs": "^3.0.3",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.10",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.4.0",
+    "@types/supertest": "^7.2.0",
+    "postject": "^1.0.0-alpha.6",
+    "supertest": "^7.2.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

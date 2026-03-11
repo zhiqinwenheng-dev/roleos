@@ -1,0 +1,72 @@
+{
+  "kind": "market-catalog",
+  "specVersion": "v1",
+  "updatedAt": "2026-03-11T00:00:00.000Z",
+  "bPackages": [
+    {
+      "code": "rs-selfhosted-standard",
+      "name": "RS Self-Hosted Standard",
+      "description": "One-click deployment package for Linux, Windows, and macOS with RoleOS and optional OpenClaw sidecar.",
+      "deliveryModes": [
+        "one-click-script",
+        "cli-binary"
+      ],
+      "entryPoints": [
+        "scripts/one-click-deploy.sh",
+        "scripts/one-click-deploy.ps1",
+        "release/*"
+      ]
+    }
+  ],
+  "billingModes": [
+    {
+      "id": "api_token",
+      "title": "API Token",
+      "description": "Metered by API token usage for model calls."
+    },
+    {
+      "id": "compute_token",
+      "title": "Compute Token",
+      "description": "Metered by runtime compute capacity and workload duration."
+    }
+  ],
+  "cPlans": [
+    {
+      "planCode": "trial",
+      "title": "Trial",
+      "recommendedBillingModes": [
+        "api_token"
+      ]
+    },
+    {
+      "planCode": "starter",
+      "title": "Starter",
+      "recommendedBillingModes": [
+        "api_token",
+        "compute_token"
+      ]
+    },
+    {
+      "planCode": "pro",
+      "title": "Pro",
+      "recommendedBillingModes": [
+        "api_token",
+        "compute_token"
+      ]
+    },
+    {
+      "planCode": "business",
+      "title": "Business",
+      "recommendedBillingModes": [
+        "compute_token"
+      ]
+    },
+    {
+      "planCode": "enterprise",
+      "title": "Enterprise",
+      "recommendedBillingModes": [
+        "compute_token"
+      ]
+    }
+  ]
+}

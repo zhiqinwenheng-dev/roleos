@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://roleos.local/schemas/kit.v1.json",
+  "title": "KitSpecV1",
+  "type": "object",
+  "required": [
+    "id",
+    "kind",
+    "specVersion",
+    "lifecycle",
+    "title",
+    "description",
+    "updatedAt",
+    "requiredAssets",
+    "installTarget",
+    "modelPolicy",
+    "docs",
+    "checks",
+    "version",
+    "roleRefs"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "kind": {
+      "const": "kit"
+    },
+    "specVersion": {
+      "const": "v1"
+    },
+    "lifecycle": {
+      "enum": [
+        "draft",
+        "validated",
+        "active",
+        "deprecated"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "requiredAssets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "installTarget": {
+      "enum": [
+        "workspace",
+        "tenant"
+      ]
+    },
+    "modelPolicy": {
+      "type": "object",
+      "required": [
+        "name",
+        "temperature",
+        "maxTokens"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "maxTokens": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "docs": {
+      "type": "string"
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "roleRefs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

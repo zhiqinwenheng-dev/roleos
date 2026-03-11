@@ -1,0 +1,9 @@
+node_modules
+dist
+.roleos
+.github
+coverage
+*.log
+.env
+.env.*
+!.env.production.example

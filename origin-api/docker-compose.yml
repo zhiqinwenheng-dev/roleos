@@ -1,0 +1,26 @@
+services:
+  openclaw:
+    image: ${ROLEOS_OPENCLAW_IMAGE:-ghcr.io/openclaw/openclaw:latest}
+    container_name: roleosbc-openclaw
+    restart: unless-stopped
+    ports:
+      - "4310:4310"
+    profiles:
+      - with-openclaw
+
+  roleos-cloud:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: roleosbc:latest
+    container_name: roleosbc-cloud
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.production
+    volumes:
+      - roleos_data:/app/.roleos
+
+volumes:
+  roleos_data:

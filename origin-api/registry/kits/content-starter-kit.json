@@ -1,0 +1,29 @@
+{
+  "id": "content-starter-kit",
+  "kind": "kit",
+  "specVersion": "v1",
+  "lifecycle": "active",
+  "title": "Content Starter Kit",
+  "description": "Starter assets for content workflows.",
+  "updatedAt": "2026-03-11T00:00:00.000Z",
+  "requiredAssets": [
+    "skills/content-rewriter",
+    "skills/fact-checker",
+    "skills/style-guard"
+  ],
+  "installTarget": "workspace",
+  "modelPolicy": {
+    "name": "default-managed-model",
+    "temperature": 0.4,
+    "maxTokens": 4096
+  },
+  "docs": "Use for structured content generation and revisions.",
+  "checks": [
+    "skills loaded",
+    "model policy available"
+  ],
+  "version": "1.0.0",
+  "roleRefs": [
+    "content-operator"
+  ]
+}

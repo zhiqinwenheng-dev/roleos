@@ -1,0 +1,9 @@
+name = "roleos-cloud-edge"
+main = "cloudflare/worker.ts"
+compatibility_date = "2026-03-11"
+
+[vars]
+ORIGIN_API_URL = "https://api.example.com"
+
+# Set EDGE_SHARED_SECRET via Cloudflare Dashboard secret
+# wrangler secret put EDGE_SHARED_SECRET
