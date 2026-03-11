@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchMe, fetchWorkspaceDashboard, readSession, type WorkspaceInfo } from "../lib/roleosApi";
+import { useTranslation } from "../context/LanguageContext";
 
 export default function AppHomePage() {
+  const { language } = useTranslation();
+  const isZh = language === "zh";
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
@@ -44,7 +48,7 @@ export default function AppHomePage() {
           await loadDashboard(me.workspaces[0].id);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load app center.");
+        setError(err instanceof Error ? err.message : isZh ? "加载应用中心失败。" : "Failed to load app center.");
       } finally {
         setLoading(false);
       }
@@ -59,7 +63,9 @@ export default function AppHomePage() {
     try {
       await loadDashboard(nextWorkspaceId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load workspace data.");
+      setError(
+        err instanceof Error ? err.message : isZh ? "加载工作空间数据失败。" : "Failed to load workspace data."
+      );
     } finally {
       setLoading(false);
     }
@@ -71,14 +77,16 @@ export default function AppHomePage() {
         <div className="rounded-3xl bg-black text-white p-10">
           <h1 className="text-4xl font-bold mb-3">RoleOS App Center</h1>
           <p className="text-white/65">
-            Login first to manage RS(Self-Hosted), Rc(Cloud), billing, and admin operations.
+            {isZh
+              ? "请先登录，再管理 RS（Self-Hosted）、RC（Cloud）、计费与 Admin。"
+              : "Login first to manage RS (Self-Hosted), RC (Cloud), billing, and admin operations."}
           </p>
           <div className="mt-6 flex gap-3">
             <Link to="/login" className="px-5 py-3 bg-white text-black rounded-xl font-bold">
-              Login
+              {isZh ? "登录" : "Login"}
             </Link>
             <Link to="/signup" className="px-5 py-3 border border-white/20 rounded-xl font-bold">
-              Signup
+              {isZh ? "注册" : "Signup"}
             </Link>
           </div>
         </div>
@@ -90,31 +98,43 @@ export default function AppHomePage() {
     <div className="pt-24 pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <section className="rounded-3xl bg-gradient-to-r from-black via-zinc-900 to-zinc-700 text-white p-8 mb-6">
         <h1 className="text-3xl font-bold">RoleOS App Center</h1>
-        <p className="text-white/65 mt-2">Signed in as {email || "-"}</p>
+        <p className="text-white/65 mt-2">
+          {isZh ? "当前登录账号" : "Signed in as"} {email || "-"}
+        </p>
       </section>
 
       <section className="grid lg:grid-cols-4 gap-4 mb-6">
         <Link to="/app/self-hosted" className="rounded-2xl border border-black/10 bg-white p-5 hover:shadow-sm">
           <h2 className="font-bold mb-1">RS Console</h2>
-          <p className="text-sm text-black/60">Manage self-hosted entitlement, download, and config.</p>
+          <p className="text-sm text-black/60">
+            {isZh
+              ? "管理 RS 授权状态、安装包下载与配置生成。"
+              : "Manage self-hosted entitlement, downloads, and config."}
+          </p>
         </Link>
         <Link to="/app/cloud" className="rounded-2xl border border-black/10 bg-white p-5 hover:shadow-sm">
-          <h2 className="font-bold mb-1">Rc Console</h2>
-          <p className="text-sm text-black/60">Run Role/Kit/Team flow in managed cloud mode.</p>
+          <h2 className="font-bold mb-1">RC Console</h2>
+          <p className="text-sm text-black/60">
+            {isZh ? "在托管模式执行 Role / Kit / Team 工作流。" : "Run Role / Kit / Team flow in managed cloud mode."}
+          </p>
         </Link>
         <Link to="/app/billing" className="rounded-2xl border border-black/10 bg-white p-5 hover:shadow-sm">
-          <h2 className="font-bold mb-1">Billing</h2>
-          <p className="text-sm text-black/60">Cloud plans, checkout, and order history.</p>
+          <h2 className="font-bold mb-1">{isZh ? "计费中心" : "Billing"}</h2>
+          <p className="text-sm text-black/60">
+            {isZh ? "管理 Cloud 订阅、结算与订单历史。" : "Cloud plans, checkout, and order history."}
+          </p>
         </Link>
         <Link to="/app/admin" className="rounded-2xl border border-black/10 bg-white p-5 hover:shadow-sm">
           <h2 className="font-bold mb-1">Admin</h2>
-          <p className="text-sm text-black/60">View users, workspaces, orders, and runs.</p>
+          <p className="text-sm text-black/60">
+            {isZh ? "查看用户、工作空间、订单与运行记录。" : "View users, workspaces, orders, and runs."}
+          </p>
         </Link>
       </section>
 
       <section className="rounded-2xl border border-black/10 bg-white p-6">
         <div className="flex flex-wrap items-center gap-3 mb-4">
-          <label className="text-sm font-semibold">Workspace</label>
+          <label className="text-sm font-semibold">{isZh ? "工作空间" : "Workspace"}</label>
           <select
             value={workspaceId}
             onChange={(e) => void onWorkspaceChange(e.target.value)}
@@ -128,13 +148,12 @@ export default function AppHomePage() {
           </select>
         </div>
 
-        {loading ? <p className="text-sm text-black/60">Loading...</p> : null}
+        {loading ? <p className="text-sm text-black/60">{isZh ? "加载中..." : "Loading..."}</p> : null}
         {error ? <p className="text-sm text-red-600 mb-3">{error}</p> : null}
         <pre className="p-4 bg-zinc-950 text-zinc-100 rounded-xl text-xs overflow-auto min-h-[240px]">
-          {dashboard ? JSON.stringify(dashboard, null, 2) : "No dashboard data."}
+          {dashboard ? JSON.stringify(dashboard, null, 2) : isZh ? "暂无 dashboard 数据。" : "No dashboard data."}
         </pre>
       </section>
     </div>
   );
 }
-

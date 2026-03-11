@@ -1,24 +1,25 @@
 import { motion } from 'motion/react';
 import { Check, Cpu, Wrench } from 'lucide-react';
-import { useTranslation } from '../App';
+import { useTranslation } from '../context/LanguageContext';
 
 export const Pricing = () => {
-  const { t } = useTranslation();
+  const { language } = useTranslation();
+  const isZh = language === 'zh';
 
   const serviceCards = [
     {
       id: 'openclaw-service',
       icon: Wrench,
-      title: t.pricing.service1Title,
-      slogan: t.pricing.service1Slogan,
-      description: t.pricing.service1Desc,
+      title: isZh ? 'RS · Self-Hosted' : 'RS · Self-Hosted',
+      slogan: isZh ? '一次购买，私有部署' : 'One-time purchase, private deployment',
+      description: isZh ? '适合需要自有环境控制和合规隔离的团队。' : 'Best for teams requiring full environment control.',
       items: [
-        t.pricing.service1Item1,
-        t.pricing.service1Item2,
-        t.pricing.service1Item3,
-        t.pricing.service1Item4
+        isZh ? '一键安装器与部署脚本' : 'One-click installer and scripts',
+        isZh ? '支持 Windows / macOS / Linux' : 'Windows / macOS / Linux support',
+        isZh ? 'Role / Kit / Team Starter Pack' : 'Role / Kit / Team starter pack',
+        isZh ? '部署文档与配置模板' : 'Deployment docs and config templates'
       ],
-      cta: t.pricing.ctaPrimary,
+      cta: isZh ? '购买 RS' : 'Buy RS',
       highlighted: true,
       cardClass:
         'bg-blue-600 border-blue-500 shadow-[0_20px_50px_-15px_rgba(37,99,235,0.4)] text-white scale-[1.02]',
@@ -29,16 +30,16 @@ export const Pricing = () => {
     {
       id: 'compute-service',
       icon: Cpu,
-      title: t.pricing.service2Title,
-      slogan: t.pricing.service2Slogan,
-      description: t.pricing.service2Desc,
+      title: isZh ? 'RC · Cloud' : 'RC · Cloud',
+      slogan: isZh ? '注册即用，持续迭代' : 'Signup and run instantly',
+      description: isZh ? '适合快速试用、持续运营与商业转化。' : 'Best for fast trial, ongoing operation and conversion.',
       items: [
-        t.pricing.service2Item1,
-        t.pricing.service2Item2,
-        t.pricing.service2Item3,
-        t.pricing.service2Item4
+        isZh ? '3 天免费试用' : '3-day free trial',
+        isZh ? 'BYOM 免费继续使用' : 'BYOM free after trial',
+        isZh ? 'Managed Model ¥39/月' : 'Managed Model ¥39/month',
+        isZh ? '租户隔离与运行审计' : 'Tenant isolation and run audit'
       ],
-      cta: t.pricing.ctaSecondary,
+      cta: isZh ? '开始 RC' : 'Start RC',
       highlighted: false,
       cardClass: 'bg-white border-slate-100 text-slate-900 hover:border-blue-200 hover:shadow-xl hover:shadow-slate-200/50',
       iconWrapClass: 'bg-blue-50 text-blue-600',
@@ -58,7 +59,7 @@ export const Pricing = () => {
             viewport={{ once: true }}
             className="text-4xl md:text-6xl font-display font-bold mb-6 text-gradient"
           >
-            {t.pricing.title}
+            {isZh ? '定价方案' : 'Pricing'}
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -67,7 +68,7 @@ export const Pricing = () => {
             transition={{ delay: 0.1 }}
             className="text-xl text-slate-500 font-medium"
           >
-            {t.pricing.subtitle}
+            {isZh ? '同一标准下的 RS 与 RC 两种交付模式' : 'Two delivery modes on one shared standard'}
           </motion.p>
         </div>
 
@@ -83,7 +84,7 @@ export const Pricing = () => {
             >
               {service.highlighted && (
                 <div className="absolute -top-5 left-1/2 -translate-x-1/2 px-6 py-2 bg-slate-900 text-white text-[10px] font-black rounded-full uppercase tracking-[0.2em] shadow-xl">
-                  {t.pricing.badge}
+                  {isZh ? '推荐' : 'Recommended'}
                 </div>
               )}
 

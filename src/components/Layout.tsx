@@ -19,7 +19,7 @@ export function Navbar() {
     { name: t("nav_docs"), path: "/docs", icon: <BookOpen className="w-4 h-4" /> },
     {
       name: "GitHub",
-      path: "https://github.com/roleos/roleos",
+      path: "https://github.com/zhiqinwenheng-dev/roleos",
       isExternal: true,
       icon: <Github className="w-4 h-4" />
     }
@@ -66,7 +66,7 @@ export function Navbar() {
             <button
               onClick={() => setLanguage(isZh ? "en" : "zh")}
               className="p-2 text-black/60 hover:text-black transition-colors flex items-center space-x-1"
-              title="Switch Language"
+              title={isZh ? "切换英文" : "Switch to Chinese"}
             >
               <Languages className="w-4 h-4" />
               <span className="text-xs font-bold uppercase">{isZh ? "EN" : "中文"}</span>
@@ -131,7 +131,9 @@ export function Navbar() {
                     key={item.name}
                     to={item.path}
                     className={`block px-3 py-2 text-base font-medium rounded-md ${
-                      location.pathname === item.path ? "text-black bg-black/5" : "text-black/60 hover:text-black hover:bg-black/5"
+                      location.pathname === item.path
+                        ? "text-black bg-black/5"
+                        : "text-black/60 hover:text-black hover:bg-black/5"
                     }`}
                     onClick={() => setIsOpen(false)}
                   >
@@ -181,10 +183,11 @@ export function Footer() {
             </Link>
             <p className="text-sm text-black/50 max-w-xs">
               {isZh
-                ? "同一套标准，两种交付模式：RS(Self-Hosted) 与 Rc(Cloud)。"
-                : "One standard, two delivery modes: RS (Self-Hosted) and Rc (Cloud)."}
+                ? "同一套标准，两种交付模式：RS（Self-Hosted）与 RC（Cloud）。"
+                : "One standard, two delivery modes: RS (Self-Hosted) and RC (Cloud)."}
             </p>
           </div>
+
           <div>
             <h4 className="text-sm font-bold text-black mb-4 uppercase tracking-wider">
               {isZh ? "产品" : "Product"}
@@ -202,11 +205,12 @@ export function Footer() {
               </li>
               <li>
                 <Link to="/app/cloud" className="text-sm text-black/50 hover:text-black">
-                  Rc Cloud
+                  RC Cloud
                 </Link>
               </li>
             </ul>
           </div>
+
           <div>
             <h4 className="text-sm font-bold text-black mb-4 uppercase tracking-wider">
               {isZh ? "资源" : "Resources"}
@@ -223,12 +227,18 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="https://github.com/roleos/roleos" className="text-sm text-black/50 hover:text-black">
+                <a
+                  href="https://github.com/zhiqinwenheng-dev/roleos"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-black/50 hover:text-black"
+                >
                   GitHub
                 </a>
               </li>
             </ul>
           </div>
+
           <div>
             <h4 className="text-sm font-bold text-black mb-4 uppercase tracking-wider">
               {isZh ? "平台" : "Platform"}
@@ -236,7 +246,7 @@ export function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link to="/app" className="text-sm text-black/50 hover:text-black">
-                  App Center
+                  {isZh ? "应用中心" : "App Center"}
                 </Link>
               </li>
               <li>
@@ -247,6 +257,7 @@ export function Footer() {
             </ul>
           </div>
         </div>
+
         <div className="mt-12 pt-8 border-t border-black/5 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <p className="text-xs text-black/40">© 2026 RoleOS. All rights reserved.</p>
           <div className="flex space-x-6">
@@ -266,4 +277,3 @@ export function Footer() {
 export function MainContainer({ children }: { children: ReactNode }) {
   return <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">{children}</div>;
 }
-

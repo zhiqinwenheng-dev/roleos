@@ -1,7 +1,7 @@
 import { motion } from 'motion/react';
 import { Users, UserCheck, Wrench, Database } from 'lucide-react';
 import { FEATURES } from '../constants';
-import { useTranslation } from '../App';
+import { useTranslation } from '../context/LanguageContext';
 
 const ICON_MAP: Record<string, any> = {
   Users,
@@ -11,7 +11,8 @@ const ICON_MAP: Record<string, any> = {
 };
 
 export const Features = () => {
-  const { t, lang } = useTranslation();
+  const { language } = useTranslation();
+  const isZh = language === 'zh';
 
   return (
     <section className="py-32 relative overflow-hidden bg-white">
@@ -24,7 +25,7 @@ export const Features = () => {
             viewport={{ once: true }}
             className="text-4xl md:text-6xl font-display font-bold mb-6 text-gradient"
           >
-            {t.features.title}
+            {isZh ? '核心能力' : 'Core Capabilities'}
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -33,7 +34,7 @@ export const Features = () => {
             transition={{ delay: 0.1 }}
             className="text-xl text-slate-500 font-medium"
           >
-            {t.features.subtitle}
+            {isZh ? '以 Role / Kit / Team 为核心的生产化路径' : 'Production-ready workflow built on Role / Kit / Team'}
           </motion.p>
         </div>
 
@@ -53,10 +54,10 @@ export const Features = () => {
                   <Icon className="w-8 h-8 text-blue-600 group-hover:text-white transition-colors" />
                 </div>
                 <h3 className="text-2xl font-bold mb-4 text-slate-900 group-hover:text-blue-600 transition-colors">
-                  {lang === 'zh' ? feature.title_zh : feature.title}
+                  {isZh ? feature.title_zh : feature.title}
                 </h3>
                 <p className="text-slate-500 leading-relaxed text-base">
-                  {lang === 'zh' ? feature.description_zh : feature.description}
+                  {isZh ? feature.description_zh : feature.description}
                 </p>
               </motion.div>
             );

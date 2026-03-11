@@ -12,6 +12,7 @@ import {
   type SelfHostedEntitlement,
   type WorkspaceInfo
 } from "../lib/roleosApi";
+import { useTranslation } from "../context/LanguageContext";
 
 interface ConfigForm {
   deploymentTarget: "windows" | "linux" | "macos" | "cloud-vm";
@@ -34,6 +35,9 @@ const defaultConfig: ConfigForm = {
 };
 
 export default function SelfHostedConsolePage() {
+  const { language } = useTranslation();
+  const isZh = language === "zh";
+
   const [workspaces, setWorkspaces] = useState<WorkspaceInfo[]>([]);
   const [workspaceId, setWorkspaceId] = useState("");
   const [entitlement, setEntitlement] = useState<SelfHostedEntitlement | null>(null);
@@ -53,10 +57,7 @@ export default function SelfHostedConsolePage() {
     if (!wid) {
       return;
     }
-    const [entRes, orderRes] = await Promise.all([
-      fetchSelfHostedEntitlement(wid),
-      fetchSelfHostedOrders(wid)
-    ]);
+    const [entRes, orderRes] = await Promise.all([fetchSelfHostedEntitlement(wid), fetchSelfHostedOrders(wid)]);
     setEntitlement(entRes.entitlement);
     setOrders(orderRes.orders);
 
@@ -74,7 +75,7 @@ export default function SelfHostedConsolePage() {
     try {
       await fn();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Operation failed");
+      setError(err instanceof Error ? err.message : isZh ? "操作失败" : "Operation failed");
     } finally {
       setBusy(false);
     }
@@ -103,7 +104,7 @@ export default function SelfHostedConsolePage() {
     await safeRun(async () => {
       const wid = currentWorkspaceId();
       if (!wid) {
-        throw new Error("No workspace selected.");
+        throw new Error(isZh ? "未选择工作空间。" : "No workspace selected.");
       }
       const result = await createSelfHostedCheckout(wid);
       if (result.order.checkoutUrl) {
@@ -117,7 +118,7 @@ export default function SelfHostedConsolePage() {
     await safeRun(async () => {
       const wid = currentWorkspaceId();
       if (!wid) {
-        throw new Error("No workspace selected.");
+        throw new Error(isZh ? "未选择工作空间。" : "No workspace selected.");
       }
       await downloadSelfHostedArtifact(wid, artifactId);
     });
@@ -127,7 +128,7 @@ export default function SelfHostedConsolePage() {
     await safeRun(async () => {
       const wid = currentWorkspaceId();
       if (!wid) {
-        throw new Error("No workspace selected.");
+        throw new Error(isZh ? "未选择工作空间。" : "No workspace selected.");
       }
       const output = await generateSelfHostedConfigTemplate(wid, {
         deploymentTarget: configForm.deploymentTarget,
@@ -147,14 +148,16 @@ export default function SelfHostedConsolePage() {
       <section className="rounded-3xl bg-black text-white p-8 mb-6">
         <h1 className="text-3xl font-bold">RS Self-Hosted Console</h1>
         <p className="text-white/60 mt-2">
-          Purchase RS, unlock download artifacts, then generate deployment config and run one-click setup.
+          {isZh
+            ? "购买 RS 后解锁安装包下载，再生成部署配置并执行一键安装。"
+            : "Purchase RS, unlock download artifacts, then generate config and run one-click setup."}
         </p>
       </section>
 
       {error ? <div className="mb-4 text-sm text-red-600">{error}</div> : null}
 
       <section className="rounded-2xl border border-black/10 bg-white p-6 mb-6">
-        <label className="text-sm font-semibold">Workspace</label>
+        <label className="text-sm font-semibold">{isZh ? "工作空间" : "Workspace"}</label>
         <select
           value={workspaceId}
           onChange={(e) => void onWorkspaceChange(e.target.value)}
@@ -170,13 +173,13 @@ export default function SelfHostedConsolePage() {
 
       <section className="grid lg:grid-cols-2 gap-6 mb-6">
         <div className="rounded-2xl border border-black/10 bg-white p-6">
-          <h2 className="text-xl font-bold mb-3">RS Entitlement</h2>
+          <h2 className="text-xl font-bold mb-3">{isZh ? "RS 授权状态" : "RS Entitlement"}</h2>
           <button
             disabled={busy}
             onClick={() => void onCreateCheckout()}
             className="px-4 py-2 rounded-lg bg-black text-white text-sm font-semibold disabled:opacity-50"
           >
-            Create RS Checkout (CNY 199)
+            {isZh ? "创建 RS 结算单（¥199）" : "Create RS Checkout (¥199)"}
           </button>
           <pre className="mt-3 p-3 bg-zinc-950 text-zinc-100 rounded-lg text-xs overflow-auto min-h-[140px]">
             {JSON.stringify(entitlement, null, 2)}
@@ -184,7 +187,7 @@ export default function SelfHostedConsolePage() {
         </div>
 
         <div className="rounded-2xl border border-black/10 bg-white p-6">
-          <h2 className="text-xl font-bold mb-3">RS Orders</h2>
+          <h2 className="text-xl font-bold mb-3">{isZh ? "RS 订单" : "RS Orders"}</h2>
           <pre className="p-3 bg-zinc-950 text-zinc-100 rounded-lg text-xs overflow-auto min-h-[200px]">
             {JSON.stringify(orders, null, 2)}
           </pre>
@@ -192,10 +195,12 @@ export default function SelfHostedConsolePage() {
       </section>
 
       <section className="rounded-2xl border border-black/10 bg-white p-6 mb-6">
-        <h2 className="text-xl font-bold mb-3">Download Artifacts</h2>
+        <h2 className="text-xl font-bold mb-3">{isZh ? "下载安装包" : "Download Artifacts"}</h2>
         {!artifacts.length ? (
           <p className="text-sm text-black/60">
-            Activate RS entitlement first, then download installer binaries and one-click scripts.
+            {isZh
+              ? "请先激活 RS 授权，随后即可下载安装包与一键部署脚本。"
+              : "Activate RS entitlement first, then download installers and scripts."}
           </p>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -210,7 +215,7 @@ export default function SelfHostedConsolePage() {
                   onClick={() => void onDownloadArtifact(artifact.id)}
                   className="mt-3 px-3 py-2 rounded-lg bg-black text-white text-xs font-semibold disabled:opacity-50"
                 >
-                  Download
+                  {isZh ? "下载" : "Download"}
                 </button>
               </div>
             ))}
@@ -219,7 +224,7 @@ export default function SelfHostedConsolePage() {
       </section>
 
       <section className="rounded-2xl border border-black/10 bg-white p-6">
-        <h2 className="text-xl font-bold mb-3">Config Generator</h2>
+        <h2 className="text-xl font-bold mb-3">{isZh ? "配置生成器" : "Config Generator"}</h2>
         <div className="grid md:grid-cols-2 gap-3">
           <select
             value={configForm.deploymentTarget}
@@ -239,19 +244,19 @@ export default function SelfHostedConsolePage() {
           <input
             value={configForm.starterKitId}
             onChange={(e) => setConfigForm((prev) => ({ ...prev, starterKitId: e.target.value }))}
-            placeholder="starter kit id"
+            placeholder={isZh ? "starter kit id" : "starter kit id"}
             className="border border-black/15 rounded-lg px-3 py-2 text-sm"
           />
           <input
             value={configForm.modelApiKey}
             onChange={(e) => setConfigForm((prev) => ({ ...prev, modelApiKey: e.target.value }))}
-            placeholder="model api key"
+            placeholder={isZh ? "模型 API Key" : "model api key"}
             className="border border-black/15 rounded-lg px-3 py-2 text-sm"
           />
           <input
             value={configForm.modelBaseUrl}
             onChange={(e) => setConfigForm((prev) => ({ ...prev, modelBaseUrl: e.target.value }))}
-            placeholder="model base url (optional)"
+            placeholder={isZh ? "模型 Base URL（可选）" : "model base url (optional)"}
             className="border border-black/15 rounded-lg px-3 py-2 text-sm"
           />
           <input
@@ -263,13 +268,13 @@ export default function SelfHostedConsolePage() {
           <input
             value={configForm.openClawApiKey}
             onChange={(e) => setConfigForm((prev) => ({ ...prev, openClawApiKey: e.target.value }))}
-            placeholder="openclaw api key (optional)"
+            placeholder={isZh ? "openclaw api key（可选）" : "openclaw api key (optional)"}
             className="border border-black/15 rounded-lg px-3 py-2 text-sm"
           />
           <input
             value={configForm.feishuWebhookUrl}
             onChange={(e) => setConfigForm((prev) => ({ ...prev, feishuWebhookUrl: e.target.value }))}
-            placeholder="feishu webhook url (optional)"
+            placeholder={isZh ? "飞书 webhook（可选）" : "feishu webhook (optional)"}
             className="md:col-span-2 border border-black/15 rounded-lg px-3 py-2 text-sm"
           />
         </div>
@@ -279,14 +284,13 @@ export default function SelfHostedConsolePage() {
           onClick={() => void onGenerateConfig()}
           className="mt-3 px-4 py-2 rounded-lg bg-black text-white text-sm font-semibold disabled:opacity-50"
         >
-          Generate Config
+          {isZh ? "生成配置" : "Generate Config"}
         </button>
 
         <pre className="mt-3 p-3 bg-zinc-950 text-zinc-100 rounded-lg text-xs overflow-auto min-h-[220px]">
-          {configOutput ? JSON.stringify(configOutput, null, 2) : "No generated config yet."}
+          {configOutput ? JSON.stringify(configOutput, null, 2) : isZh ? "暂未生成配置。" : "No generated config yet."}
         </pre>
       </section>
     </div>
   );
 }
-
