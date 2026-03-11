@@ -14,6 +14,7 @@ import AccountPage from "./pages/Account";
 import SupportPage from "./pages/Support";
 import SelfHostedConsolePage from "./pages/SelfHostedConsole";
 import AdminPage from "./pages/Admin";
+import MockCheckoutPage from "./pages/MockCheckout";
 import { useEffect, type ReactNode } from "react";
 import { LanguageProvider } from "./context/LanguageContext";
 
@@ -65,6 +66,7 @@ export default function App() {
             <Route path="/app/self-hosted" element={<SelfHostedConsolePage />} />
             <Route path="/app/self-hosted/downloads" element={<SelfHostedConsolePage />} />
             <Route path="/app/self-hosted/config" element={<SelfHostedConsolePage />} />
+            <Route path="/checkout/mock" element={<MockCheckoutPage />} />
             <Route path="/docs" element={<Docs />} />
             <Route path="/market" element={<Market />} />
             <Route path="/login" element={<Login />} />

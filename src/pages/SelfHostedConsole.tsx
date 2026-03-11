@@ -111,7 +111,15 @@ export default function SelfHostedConsolePage() {
         throw new Error(isZh ? "未选择工作空间。" : "No workspace selected.");
       }
       const result = await createSelfHostedCheckout(wid);
-      if (result.order.checkoutUrl) {
+      const mockUrl = `/checkout/mock?${new URLSearchParams({
+        workspaceId: wid,
+        orderId: result.order.id,
+        planCode: result.order.planCode,
+        amountUsd: String(result.order.amountUsd)
+      }).toString()}`;
+      if (result.order.provider === "personal-gateway") {
+        window.open(mockUrl, "_blank", "noopener,noreferrer");
+      } else if (result.order.checkoutUrl) {
         window.open(result.order.checkoutUrl, "_blank", "noopener,noreferrer");
       }
       await refreshSelfHosted(wid);

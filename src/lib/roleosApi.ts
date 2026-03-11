@@ -460,6 +460,26 @@ export async function createSelfHostedCheckout(
   });
 }
 
+export async function confirmMockCheckout(
+  workspaceId: string,
+  input: {
+    orderId: string;
+    status: "paid" | "failed";
+    channel: "wechat" | "alipay" | "manual";
+    providerTransactionId?: string;
+  }
+): Promise<{
+  ok: true;
+  order: PaymentOrder;
+  subscription: WorkspaceSubscription | null;
+  selfHostedEntitlement: SelfHostedEntitlement | null;
+}> {
+  return request(`/workspaces/${workspaceId}/billing/mock-checkout/confirm`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  });
+}
+
 export async function fetchSelfHostedArtifacts(
   workspaceId: string
 ): Promise<{

@@ -77,6 +77,13 @@ const selfHostedCheckoutSchema = z.object({
   cancelUrl: z.string().url().optional()
 });
 
+const mockCheckoutConfirmSchema = z.object({
+  orderId: z.string().min(1),
+  status: z.enum(["paid", "failed"]).default("paid"),
+  channel: z.enum(["wechat", "alipay", "manual"]).default("manual"),
+  providerTransactionId: z.string().optional()
+});
+
 const selfHostedConfigSchema = z.object({
   deploymentTarget: z
     .enum(["windows", "linux", "macos", "cloud-vm"])
@@ -522,6 +529,87 @@ export function createCloudApp(context: AppContext, options: CloudAppOptions) {
     ensureSelfHostedArtifacts(context.workspaceRoot);
     return buildSelfHostedArtifacts(context.workspaceRoot);
   };
+
+  async function applyPersonalPaymentResult(input: {
+    workspaceId: string;
+    orderId: string;
+    status: "paid" | "failed";
+    planCode?: string;
+    providerTransactionId?: string;
+    channel?: "wechat" | "alipay" | "manual";
+    source: "webhook" | "mock";
+  }) {
+    const order = await store.getPaymentOrder(input.orderId);
+    if (!order) {
+      throw new Error("Payment order not found.");
+    }
+    if (order.workspaceId !== input.workspaceId) {
+      throw new Error("workspaceId does not match payment order.");
+    }
+
+    const metadata: Record<string, string> = {
+      source: input.source
+    };
+    if (input.providerTransactionId) {
+      metadata.providerTransactionId = input.providerTransactionId;
+    }
+    if (input.channel) {
+      metadata.channel = input.channel;
+    }
+
+    let subscription:
+      | Awaited<ReturnType<typeof store.getWorkspaceSubscription>>
+      | Awaited<ReturnType<typeof store.setWorkspaceSubscriptionStatus>>
+      | undefined;
+    let selfHostedEntitlement:
+      | Awaited<ReturnType<typeof store.getSelfHostedEntitlement>>
+      | Awaited<ReturnType<typeof store.upsertSelfHostedEntitlement>>
+      | undefined;
+
+    if (input.status === "paid") {
+      const effectivePlanCode = input.planCode ?? order.planCode;
+      await store.updatePaymentOrderStatus(order.id, "paid", metadata);
+      if (effectivePlanCode === SELF_HOSTED_PLAN_CODE) {
+        selfHostedEntitlement = await store.upsertSelfHostedEntitlement({
+          workspaceId: input.workspaceId,
+          packageCode: SELF_HOSTED_PACKAGE_CODE,
+          status: "active",
+          orderId: order.id
+        });
+      } else {
+        subscription = await store.setWorkspaceSubscriptionPlanAndStatus(
+          input.workspaceId,
+          effectivePlanCode,
+          "active"
+        );
+      }
+    } else {
+      await store.updatePaymentOrderStatus(order.id, "failed", metadata);
+      if (order.planCode === SELF_HOSTED_PLAN_CODE) {
+        selfHostedEntitlement = await store.getSelfHostedEntitlement(input.workspaceId);
+      } else {
+        subscription = await store.setWorkspaceSubscriptionStatus(input.workspaceId, "past_due");
+      }
+    }
+
+    await store.addAuditEvent(
+      input.workspaceId,
+      input.source === "mock" ? "mock_payment_confirmed" : "personal_payment_webhook",
+      input.status,
+      {
+        orderId: input.orderId,
+        planCode: order.planCode,
+        channel: input.channel ?? "unknown"
+      }
+    );
+
+    const updatedOrder = await store.getPaymentOrder(order.id);
+    return {
+      order: updatedOrder ?? order,
+      subscription: subscription ?? null,
+      selfHostedEntitlement: selfHostedEntitlement ?? null
+    };
+  }
 
   async function ensureRegistryReady(): Promise<void> {
     const syncResult = await context.registryService.sync();
@@ -1166,6 +1254,43 @@ export function createCloudApp(context: AppContext, options: CloudAppOptions) {
         res.status(400).json({
           ok: false,
           message: error instanceof Error ? error.message : "Invalid self-hosted checkout request"
+        });
+      }
+    }
+  );
+
+  app.post(
+    "/workspaces/:id/billing/mock-checkout/confirm",
+    withAuth,
+    requireWorkspaceMembership,
+    async (req, res) => {
+      try {
+        const workspaceId = readWorkspaceId(req, res);
+        if (!workspaceId) {
+          return;
+        }
+        const payload = mockCheckoutConfirmSchema.parse(req.body ?? {});
+        const result = await applyPersonalPaymentResult({
+          workspaceId,
+          orderId: payload.orderId,
+          status: payload.status,
+          providerTransactionId: payload.providerTransactionId,
+          channel: payload.channel,
+          source: "mock"
+        });
+
+        res.json({
+          ok: true,
+          order: result.order,
+          subscription: result.subscription,
+          selfHostedEntitlement: result.selfHostedEntitlement
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Invalid mock checkout confirm request";
+        const statusCode = message.includes("not found") ? 404 : 400;
+        res.status(statusCode).json({
+          ok: false,
+          message
         });
       }
     }
@@ -1880,79 +2005,27 @@ export function createCloudApp(context: AppContext, options: CloudAppOptions) {
     }
     try {
       const payload = personalWebhookSchema.parse(req.body);
-      const order = await store.getPaymentOrder(payload.orderId);
-      if (!order) {
-        res.status(404).json({
-          ok: false,
-          message: "Payment order not found."
-        });
-        return;
-      }
-      if (order.workspaceId !== payload.workspaceId) {
-        res.status(400).json({
-          ok: false,
-          message: "workspaceId does not match payment order."
-        });
-        return;
-      }
-
-      const metadata: Record<string, string> = {};
-      if (payload.providerTransactionId) {
-        metadata.providerTransactionId = payload.providerTransactionId;
-      }
-
-      let subscription:
-        | Awaited<ReturnType<typeof store.getWorkspaceSubscription>>
-        | Awaited<ReturnType<typeof store.setWorkspaceSubscriptionStatus>>
-        | undefined;
-      let selfHostedEntitlement:
-        | Awaited<ReturnType<typeof store.getSelfHostedEntitlement>>
-        | Awaited<ReturnType<typeof store.upsertSelfHostedEntitlement>>
-        | undefined;
-      if (payload.status === "paid") {
-        const planCode = payload.planCode ?? order.planCode;
-        await store.updatePaymentOrderStatus(order.id, "paid", metadata);
-        if (planCode === SELF_HOSTED_PLAN_CODE) {
-          selfHostedEntitlement = await store.upsertSelfHostedEntitlement({
-            workspaceId: payload.workspaceId,
-            packageCode: SELF_HOSTED_PACKAGE_CODE,
-            status: "active",
-            orderId: order.id
-          });
-        } else {
-          subscription = await store.setWorkspaceSubscriptionPlanAndStatus(
-            payload.workspaceId,
-            planCode,
-            "active"
-          );
-        }
-      } else {
-        await store.updatePaymentOrderStatus(order.id, "failed", metadata);
-        if (order.planCode === SELF_HOSTED_PLAN_CODE) {
-          selfHostedEntitlement = await store.getSelfHostedEntitlement(payload.workspaceId);
-        } else {
-          subscription = await store.setWorkspaceSubscriptionStatus(
-            payload.workspaceId,
-            "past_due"
-          );
-        }
-      }
-
-      await store.addAuditEvent(payload.workspaceId, "personal_payment_webhook", payload.status, {
+      const result = await applyPersonalPaymentResult({
+        workspaceId: payload.workspaceId,
         orderId: payload.orderId,
-        planCode: order.planCode
+        status: payload.status,
+        planCode: payload.planCode,
+        providerTransactionId: payload.providerTransactionId,
+        source: "webhook"
       });
 
       res.json({
         ok: true,
         orderId: payload.orderId,
-        subscription: subscription ?? null,
-        selfHostedEntitlement: selfHostedEntitlement ?? null
+        subscription: result.subscription,
+        selfHostedEntitlement: result.selfHostedEntitlement
       });
     } catch (error) {
-      res.status(400).json({
+      const message = error instanceof Error ? error.message : "Invalid personal payment webhook";
+      const statusCode = message.includes("not found") ? 404 : 400;
+      res.status(statusCode).json({
         ok: false,
-        message: error instanceof Error ? error.message : "Invalid personal payment webhook"
+        message
       });
     }
   });

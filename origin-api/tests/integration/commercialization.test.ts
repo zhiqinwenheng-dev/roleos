@@ -143,6 +143,58 @@ describe("commercialization and operations flow", () => {
     expect(response.body.ok).toBe(false);
   });
 
+  it("supports authenticated mock checkout confirmation for RC and RS", async () => {
+    const { context } = await createTempContext();
+    const { app } = createCloudApp(context, {
+      jwtSecret: "test-secret",
+      defaultPlanCode: "starter"
+    });
+
+    const register = await request(app).post("/auth/register").send({
+      email: "mockpay@example.com",
+      password: "password123",
+      workspaceName: "MockPay Workspace"
+    });
+    expect(register.status).toBe(201);
+    const token = register.body.token as string;
+    const workspaceId = register.body.workspace.id as string;
+
+    const cloudCheckout = await request(app)
+      .post(`/workspaces/${workspaceId}/billing/checkout`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ planCode: "pro", billingMode: "api_token" });
+    expect(cloudCheckout.status).toBe(201);
+
+    const confirmCloud = await request(app)
+      .post(`/workspaces/${workspaceId}/billing/mock-checkout/confirm`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        orderId: cloudCheckout.body.order.id,
+        status: "paid",
+        channel: "alipay"
+      });
+    expect(confirmCloud.status).toBe(200);
+    expect(confirmCloud.body.subscription.planCode).toBe("pro");
+    expect(confirmCloud.body.subscription.status).toBe("active");
+
+    const rsCheckout = await request(app)
+      .post(`/workspaces/${workspaceId}/self-hosted/checkout`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({});
+    expect(rsCheckout.status).toBe(201);
+
+    const confirmRs = await request(app)
+      .post(`/workspaces/${workspaceId}/billing/mock-checkout/confirm`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        orderId: rsCheckout.body.order.id,
+        status: "paid",
+        channel: "wechat"
+      });
+    expect(confirmRs.status).toBe(200);
+    expect(confirmRs.body.selfHostedEntitlement.status).toBe("active");
+  });
+
   it("enforces trial plan run limit", async () => {
     const { context } = await createTempContext();
     const { app } = createCloudApp(context, {
