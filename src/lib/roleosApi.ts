@@ -147,7 +147,31 @@ interface ApiError {
   message?: string;
 }
 
-const API_BASE = (import.meta.env.VITE_ROLEOS_API_BASE_URL ?? "").replace(/\/+$/, "");
+function resolveApiBase(): string {
+  const envBase = (import.meta.env.VITE_ROLEOS_API_BASE_URL ?? "").trim();
+  if (envBase) {
+    return envBase.replace(/\/+$/, "");
+  }
+
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  const host = window.location.hostname;
+  const isLocalhost =
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host === "::1" ||
+    host.endsWith(".local");
+
+  if (isLocalhost) {
+    return "";
+  }
+
+  return "https://api.roleos.ai";
+}
+
+const API_BASE = resolveApiBase();
 const STORAGE_TOKEN_KEY = "roleosToken";
 const STORAGE_WORKSPACES_KEY = "roleosWorkspaces";
 
@@ -675,4 +699,3 @@ export async function updateAdminSubscription(
     body: JSON.stringify(input)
   });
 }
-
