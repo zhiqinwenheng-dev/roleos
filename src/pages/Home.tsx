@@ -122,12 +122,7 @@ export default function Home() {
               </p>
               <ul className="space-y-4 mb-10">
                 {(isZh
-                  ? [
-                      "一次性购买（¥199）",
-                      "支持 Windows / macOS / Linux",
-                      "可接入自有模型与飞书",
-                      "完整 Role / Kit / Team 工作流"
-                    ]
+                  ? ["一次性购买（¥199）", "支持 Windows / macOS / Linux", "可接入自有模型与飞书", "完整 Role / Kit / Team 流程"]
                   : [
                       "One-time purchase (¥199)",
                       "Windows / macOS / Linux support",
@@ -197,7 +192,9 @@ export default function Home() {
               <h2 className="text-4xl md:text-5xl font-bold mb-8 leading-tight">
                 {isZh ? "从意图到结果" : "From Intent to Result"}
                 <br />
-                <span className="text-white/40">{isZh ? "标准化执行路径" : "Standardized Execution Path"}</span>
+                <span className="text-white/40">
+                  {isZh ? "标准化执行路径" : "Standardized Execution Path"}
+                </span>
               </h2>
               <div className="space-y-8">
                 {[

@@ -68,7 +68,7 @@ export default function CloudPage() {
     if (isSessionPage) {
       return isZh ? "RC Cloud 会话" : "RC Cloud Session";
     }
-    return isZh ? "RoleOS RC Cloud" : "RoleOS RC Cloud";
+    return "RoleOS RC Cloud";
   }, [isOnboarding, isSessionPage, isZh]);
 
   async function safeRun(fn: () => Promise<void>) {
@@ -77,7 +77,7 @@ export default function CloudPage() {
     try {
       await fn();
     } catch (error) {
-      setErrorText(error instanceof Error ? error.message : isZh ? "操作失败" : "Operation failed");
+      setErrorText(error instanceof Error ? error.message : isZh ? "操作失败。" : "Operation failed.");
     } finally {
       setBusy(false);
     }
@@ -118,7 +118,7 @@ export default function CloudPage() {
       setWorkspaceId(session.workspaces[0].id);
     }
 
-    safeRun(async () => {
+    void safeRun(async () => {
       await bootstrapPlansAndCatalog();
       if (session.token && session.workspaces[0]?.id) {
         await refreshDashboard(session.workspaces[0].id);
@@ -205,12 +205,10 @@ export default function CloudPage() {
           animate={{ opacity: 1, y: 0 }}
           className="rounded-[2.5rem] bg-black text-white p-12"
         >
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            {isZh ? "登录后进入 RC Cloud" : "Login to open RC Cloud"}
-          </h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">{isZh ? "登录后进入 RC Cloud" : "Login to open RC Cloud"}</h1>
           <p className="text-white/60 text-lg leading-relaxed max-w-2xl">
             {isZh
-              ? "RC 控制台已对接真实后端 API，可直接完成 role 加载、kit 启用、team 执行与计费流程。"
+              ? "RC 控制台已对接真实后端 API，可完成 Role 加载、Kit 启用、Team 运行与计费流程。"
               : "The RC console is connected to backend APIs for role loading, kit activation, team runs, and billing flow."}
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
@@ -229,6 +227,8 @@ export default function CloudPage() {
     );
   }
 
+  const subscription = dashboard?.subscription;
+
   return (
     <div className="pt-24 pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <section className="rounded-[2rem] bg-gradient-to-r from-black via-zinc-900 to-zinc-700 text-white p-8 mb-8">
@@ -236,8 +236,7 @@ export default function CloudPage() {
           <div>
             <h1 className="text-3xl md:text-4xl font-bold">{pageTitle}</h1>
             <p className="text-white/60 mt-2">
-              {isZh ? "账号" : "Account"}: {email || "-"} | {isZh ? "工作空间" : "Workspace"}:{" "}
-              {currentWorkspaceId || "-"}
+              {isZh ? "账号" : "Account"}: {email || "-"} | {isZh ? "工作空间" : "Workspace"}: {currentWorkspaceId || "-"}
             </p>
             <p className="text-white/60 mt-1">
               {isZh
@@ -249,16 +248,10 @@ export default function CloudPage() {
             <Link to="/app/cloud" className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm">
               {isZh ? "控制台" : "Console"}
             </Link>
-            <Link
-              to="/app/cloud/onboarding"
-              className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
-            >
+            <Link to="/app/cloud/onboarding" className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm">
               {isZh ? "引导" : "Onboarding"}
             </Link>
-            <Link
-              to="/app/cloud/session"
-              className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
-            >
+            <Link to="/app/cloud/session" className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm">
               {isZh ? "会话" : "Session"}
             </Link>
           </div>
@@ -297,6 +290,9 @@ export default function CloudPage() {
 
         <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
           <h3 className="text-lg font-bold mb-3">{isZh ? "计费" : "Billing"}</h3>
+          <p className="text-xs text-black/50 mb-2">
+            {isZh ? "当前状态" : "Current"}: {subscription?.planCode ?? "-"} / {subscription?.status ?? "-"}
+          </p>
           <select
             value={planCode}
             onChange={(e) => setPlanCode(e.target.value)}
@@ -320,25 +316,13 @@ export default function CloudPage() {
             ))}
           </select>
           <div className="grid grid-cols-3 gap-2 mt-3">
-            <button
-              onClick={onSwitchTrial}
-              disabled={busy}
-              className="px-2 py-2 rounded-xl bg-emerald-100 text-emerald-900 text-xs font-bold"
-            >
+            <button onClick={onSwitchTrial} disabled={busy} className="px-2 py-2 rounded-xl bg-emerald-100 text-emerald-900 text-xs font-bold">
               Trial
             </button>
-            <button
-              onClick={onSwitchPlan}
-              disabled={busy}
-              className="px-2 py-2 rounded-xl bg-zinc-900 text-white text-xs font-bold"
-            >
+            <button onClick={onSwitchPlan} disabled={busy} className="px-2 py-2 rounded-xl bg-zinc-900 text-white text-xs font-bold">
               {isZh ? "应用" : "Apply"}
             </button>
-            <button
-              onClick={onCreateCheckout}
-              disabled={busy}
-              className="px-2 py-2 rounded-xl bg-amber-100 text-amber-900 text-xs font-bold"
-            >
+            <button onClick={onCreateCheckout} disabled={busy} className="px-2 py-2 rounded-xl bg-amber-100 text-amber-900 text-xs font-bold">
               {isZh ? "结算" : "Checkout"}
             </button>
           </div>
@@ -389,18 +373,10 @@ export default function CloudPage() {
         <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
           <h3 className="text-lg font-bold mb-3">{isZh ? "Role / Kit 操作" : "Role / Kit"}</h3>
           <div className="grid grid-cols-2 gap-2 mb-3">
-            <button
-              onClick={onLoadRoles}
-              disabled={busy}
-              className="px-3 py-2 rounded-xl bg-zinc-900 text-white text-sm font-bold"
-            >
+            <button onClick={onLoadRoles} disabled={busy} className="px-3 py-2 rounded-xl bg-zinc-900 text-white text-sm font-bold">
               {isZh ? "加载 Role" : "Load Roles"}
             </button>
-            <button
-              onClick={onActivateKit}
-              disabled={busy}
-              className="px-3 py-2 rounded-xl bg-zinc-100 text-black text-sm font-bold"
-            >
+            <button onClick={onActivateKit} disabled={busy} className="px-3 py-2 rounded-xl bg-zinc-100 text-black text-sm font-bold">
               {isZh ? "启用 Kit" : "Activate Kit"}
             </button>
           </div>

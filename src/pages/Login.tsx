@@ -28,7 +28,7 @@ export default function Login({ defaultMode = "login" }: LoginPageProps) {
 
   const modeTitle = useMemo(() => {
     if (isRegister) {
-      return isZh ? "创建 RoleOS 账号" : "Create your RoleOS account";
+      return isZh ? "创建你的 RoleOS 账号" : "Create your RoleOS account";
     }
     return isZh ? "欢迎回来" : "Welcome back";
   }, [isRegister, isZh]);
@@ -85,8 +85,8 @@ export default function Login({ defaultMode = "login" }: LoginPageProps) {
                 ? "一个账号统一使用 RS 与 RC。"
                 : "One account for both RS and RC."
               : isZh
-              ? "登录 RoleOS 应用中心。"
-              : "Login to RoleOS app center."}
+                ? "登录 RoleOS 应用中心。"
+                : "Login to RoleOS app center."}
           </p>
         </div>
 

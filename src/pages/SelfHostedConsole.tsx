@@ -44,7 +44,11 @@ export default function SelfHostedConsolePage() {
   const [orders, setOrders] = useState<PaymentOrder[]>([]);
   const [artifacts, setArtifacts] = useState<SelfHostedArtifact[]>([]);
   const [configForm, setConfigForm] = useState<ConfigForm>(defaultConfig);
-  const [configOutput, setConfigOutput] = useState<unknown>(null);
+  const [configOutput, setConfigOutput] = useState<{
+    configTemplate: Record<string, string>;
+    envText: string;
+    installCommand: string;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -75,7 +79,7 @@ export default function SelfHostedConsolePage() {
     try {
       await fn();
     } catch (err) {
-      setError(err instanceof Error ? err.message : isZh ? "操作失败" : "Operation failed");
+      setError(err instanceof Error ? err.message : isZh ? "操作失败。" : "Operation failed.");
     } finally {
       setBusy(false);
     }
@@ -149,8 +153,8 @@ export default function SelfHostedConsolePage() {
         <h1 className="text-3xl font-bold">RS Self-Hosted Console</h1>
         <p className="text-white/60 mt-2">
           {isZh
-            ? "购买 RS 后解锁安装包下载，再生成部署配置并执行一键安装。"
-            : "Purchase RS, unlock download artifacts, then generate config and run one-click setup."}
+            ? "购买 RS 后解锁安装包下载，再生成配置并执行一键部署。"
+            : "Purchase RS, unlock artifact downloads, then generate config and run one-click setup."}
         </p>
       </section>
 
@@ -181,16 +185,28 @@ export default function SelfHostedConsolePage() {
           >
             {isZh ? "创建 RS 结算单（¥199）" : "Create RS Checkout (¥199)"}
           </button>
-          <pre className="mt-3 p-3 bg-zinc-950 text-zinc-100 rounded-lg text-xs overflow-auto min-h-[140px]">
-            {JSON.stringify(entitlement, null, 2)}
-          </pre>
+          <div className="mt-4 text-sm space-y-1">
+            <p>
+              status: <span className="font-semibold">{entitlement?.status ?? "-"}</span>
+            </p>
+            <p>
+              package: <span className="font-semibold">{entitlement?.packageCode ?? "rs-standard"}</span>
+            </p>
+          </div>
         </div>
 
         <div className="rounded-2xl border border-black/10 bg-white p-6">
           <h2 className="text-xl font-bold mb-3">{isZh ? "RS 订单" : "RS Orders"}</h2>
-          <pre className="p-3 bg-zinc-950 text-zinc-100 rounded-lg text-xs overflow-auto min-h-[200px]">
-            {JSON.stringify(orders, null, 2)}
-          </pre>
+          <div className="max-h-[200px] overflow-auto text-xs">
+            {orders.map((order) => (
+              <div key={order.id} className="border-b border-black/10 py-2">
+                <p className="font-semibold">{order.status}</p>
+                <p>{order.id}</p>
+                <p>{order.createdAt}</p>
+              </div>
+            ))}
+            {orders.length === 0 ? <p className="text-black/50">{isZh ? "暂无订单。" : "No orders yet."}</p> : null}
+          </div>
         </div>
       </section>
 
@@ -199,8 +215,8 @@ export default function SelfHostedConsolePage() {
         {!artifacts.length ? (
           <p className="text-sm text-black/60">
             {isZh
-              ? "请先激活 RS 授权，随后即可下载安装包与一键部署脚本。"
-              : "Activate RS entitlement first, then download installers and scripts."}
+              ? "请先激活 RS 授权，随后可下载 Windows / Linux / macOS 安装脚本与包。"
+              : "Activate RS entitlement first, then download Windows / Linux / macOS installers and scripts."}
           </p>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -244,7 +260,7 @@ export default function SelfHostedConsolePage() {
           <input
             value={configForm.starterKitId}
             onChange={(e) => setConfigForm((prev) => ({ ...prev, starterKitId: e.target.value }))}
-            placeholder={isZh ? "starter kit id" : "starter kit id"}
+            placeholder="starter kit id"
             className="border border-black/15 rounded-lg px-3 py-2 text-sm"
           />
           <input
@@ -287,9 +303,18 @@ export default function SelfHostedConsolePage() {
           {isZh ? "生成配置" : "Generate Config"}
         </button>
 
-        <pre className="mt-3 p-3 bg-zinc-950 text-zinc-100 rounded-lg text-xs overflow-auto min-h-[220px]">
-          {configOutput ? JSON.stringify(configOutput, null, 2) : isZh ? "暂未生成配置。" : "No generated config yet."}
-        </pre>
+        <div className="mt-4 space-y-3">
+          <div className="rounded-lg bg-zinc-50 border border-black/10 p-3 text-sm">
+            <p className="font-semibold mb-1">{isZh ? "安装命令" : "Install Command"}</p>
+            <code>{configOutput?.installCommand ?? "-"}</code>
+          </div>
+          <textarea
+            readOnly
+            value={configOutput?.envText ?? ""}
+            placeholder={isZh ? "这里会输出 .env 模板" : "Generated .env template will appear here"}
+            className="w-full min-h-[180px] rounded-lg border border-black/15 px-3 py-2 text-xs font-mono"
+          />
+        </div>
       </section>
     </div>
   );

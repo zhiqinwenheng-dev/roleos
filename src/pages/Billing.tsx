@@ -15,7 +15,9 @@ import {
   type PaymentOrder,
   type PlanInfo,
   type SelfHostedEntitlement,
-  type WorkspaceInfo
+  type WorkspaceInfo,
+  type WorkspaceSubscription,
+  type CloudUsageSummary
 } from "../lib/roleosApi";
 import { useTranslation } from "../context/LanguageContext";
 
@@ -30,8 +32,8 @@ export default function BillingPage() {
   const [planCode, setPlanCode] = useState("trial");
   const [billingMode, setBillingMode] = useState<"api_token" | "compute_token">("api_token");
 
-  const [subscription, setSubscription] = useState<unknown>(null);
-  const [usage, setUsage] = useState<unknown>(null);
+  const [subscription, setSubscription] = useState<WorkspaceSubscription | null>(null);
+  const [usage, setUsage] = useState<CloudUsageSummary | null>(null);
   const [orders, setOrders] = useState<PaymentOrder[]>([]);
   const [selfHostedOrders, setSelfHostedOrders] = useState<PaymentOrder[]>([]);
   const [entitlement, setEntitlement] = useState<SelfHostedEntitlement | null>(null);
@@ -67,7 +69,7 @@ export default function BillingPage() {
     try {
       await fn();
     } catch (err) {
-      setError(err instanceof Error ? err.message : isZh ? "操作失败" : "Operation failed");
+      setError(err instanceof Error ? err.message : isZh ? "操作失败。" : "Operation failed.");
     } finally {
       setBusy(false);
     }
@@ -80,7 +82,7 @@ export default function BillingPage() {
       setWorkspaceId(session.workspaces[0].id);
     }
 
-    safeRun(async () => {
+    void safeRun(async () => {
       const [plansRes, marketRes] = await Promise.all([fetchPlans(), fetchMarketCatalog()]);
       setPlans(plansRes.plans);
       if (plansRes.plans[0]?.code) {
@@ -149,7 +151,7 @@ export default function BillingPage() {
         <h1 className="text-3xl font-bold">{isZh ? "计费中心" : "Billing Center"}</h1>
         <p className="text-white/60 mt-2">
           {isZh
-            ? "在同一工作空间下统一管理 RC 云端订阅与 RS 私有化购买。"
+            ? "同一账号下统一管理 RC 订阅与 RS 购买。"
             : "Manage RC cloud subscription and RS self-hosted purchase from one workspace account."}
         </p>
       </section>
@@ -219,7 +221,7 @@ export default function BillingPage() {
         <div className="rounded-2xl border border-black/10 bg-white p-6">
           <h2 className="text-xl font-bold mb-3">RS Self-Hosted</h2>
           <p className="text-sm text-black/60 mb-3">
-            {isZh ? "一次性购买（¥199）后可解锁下载与配置工具。" : "One-time purchase (¥199) unlocks downloads and config tools."}
+            {isZh ? "一次性购买（¥199）后解锁下载和配置工具。" : "One-time purchase (¥199) unlocks downloads and config tools."}
           </p>
           <button
             disabled={busy}
@@ -228,24 +230,44 @@ export default function BillingPage() {
           >
             {isZh ? "创建 RS 结算单" : "Create RS Checkout"}
           </button>
-          <pre className="mt-4 p-3 bg-zinc-950 text-zinc-100 rounded-lg text-xs overflow-auto min-h-[120px]">
-            {JSON.stringify(entitlement, null, 2)}
-          </pre>
+          <div className="mt-4 text-sm">
+            <p>
+              status: <span className="font-semibold">{entitlement?.status ?? "-"}</span>
+            </p>
+            <p>
+              package: <span className="font-semibold">{entitlement?.packageCode ?? "rs-standard"}</span>
+            </p>
+          </div>
         </div>
       </section>
 
       <section className="grid lg:grid-cols-2 gap-6">
         <div className="rounded-2xl border border-black/10 bg-white p-6">
-          <h3 className="font-bold mb-2">{isZh ? "订阅 / 用量" : "Subscription / Usage"}</h3>
-          <pre className="p-3 bg-zinc-950 text-zinc-100 rounded-lg text-xs overflow-auto min-h-[220px]">
-            {JSON.stringify({ subscription, usage }, null, 2)}
-          </pre>
+          <h3 className="font-bold mb-2">{isZh ? "订阅与用量" : "Subscription / Usage"}</h3>
+          <div className="text-sm space-y-1">
+            <p>plan: {subscription?.planCode ?? "-"}</p>
+            <p>status: {subscription?.status ?? "-"}</p>
+            <p>runs: {usage?.totalRuns ?? 0}</p>
+            <p>success: {usage?.successRuns ?? 0}</p>
+            <p>failed: {usage?.failedRuns ?? 0}</p>
+            <p>estimated revenue: ${usage?.totalEstimatedRevenueUsd ?? 0}</p>
+          </div>
         </div>
+
         <div className="rounded-2xl border border-black/10 bg-white p-6">
           <h3 className="font-bold mb-2">{isZh ? "订单记录" : "Orders"}</h3>
-          <pre className="p-3 bg-zinc-950 text-zinc-100 rounded-lg text-xs overflow-auto min-h-[220px]">
-            {JSON.stringify({ cloudOrders: orders, rsOrders: selfHostedOrders }, null, 2)}
-          </pre>
+          <div className="max-h-[260px] overflow-auto text-xs">
+            {[...orders, ...selfHostedOrders].map((order) => (
+              <div key={order.id} className="border-b border-black/10 py-2">
+                <p className="font-semibold">{order.planCode}</p>
+                <p>{order.status}</p>
+                <p>{order.id}</p>
+              </div>
+            ))}
+            {orders.length === 0 && selfHostedOrders.length === 0 ? (
+              <p className="text-black/50">{isZh ? "暂无订单。" : "No orders yet."}</p>
+            ) : null}
+          </div>
         </div>
       </section>
     </div>

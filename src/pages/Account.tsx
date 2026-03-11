@@ -1,6 +1,20 @@
 import { useEffect, useState } from "react";
-import { fetchMe, readSession } from "../lib/roleosApi";
+import { clearSession, fetchMe, readSession } from "../lib/roleosApi";
 import { useTranslation } from "../context/LanguageContext";
+
+interface MePayload {
+  user: {
+    id: string;
+    email: string;
+    createdAt?: string;
+  };
+  workspaceStatuses: Array<{
+    workspaceId: string;
+    workspaceName: string;
+    subscription: { planCode: string; status: string } | null;
+    selfHosted: { status: string; packageCode: string } | null;
+  }>;
+}
 
 export default function AccountPage() {
   const { language } = useTranslation();
@@ -8,7 +22,7 @@ export default function AccountPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [payload, setPayload] = useState<unknown>(null);
+  const [payload, setPayload] = useState<MePayload | null>(null);
 
   useEffect(() => {
     const session = readSession();
@@ -47,15 +61,63 @@ export default function AccountPage() {
       <section className="rounded-3xl bg-black text-white p-8 mb-6">
         <h1 className="text-3xl font-bold">{isZh ? "账户中心" : "Account Center"}</h1>
         <p className="text-white/60 mt-2">
-          {isZh ? "RS 与 RC 统一账号体系。查看当前用户与工作空间信息。" : "Unified account across RS and RC."}
+          {isZh ? "RS 与 RC 使用同一套账号体系。" : "Unified account across RS and RC."}
         </p>
       </section>
 
       {loading ? <p className="text-sm text-black/60">{isZh ? "加载中..." : "Loading..."}</p> : null}
       {error ? <p className="text-sm text-red-600 mb-3">{error}</p> : null}
-      <pre className="p-4 bg-zinc-950 text-zinc-100 rounded-xl text-xs overflow-auto min-h-[280px]">
-        {payload ? JSON.stringify(payload, null, 2) : isZh ? "暂无账户数据。" : "No account payload"}
-      </pre>
+
+      {payload ? (
+        <>
+          <section className="rounded-2xl border border-black/10 bg-white p-6 mb-6">
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="rounded-xl bg-zinc-50 border border-black/10 p-4">
+                <p className="text-xs text-black/50 mb-1">Email</p>
+                <p className="font-semibold break-all">{payload.user.email}</p>
+              </div>
+              <div className="rounded-xl bg-zinc-50 border border-black/10 p-4">
+                <p className="text-xs text-black/50 mb-1">{isZh ? "用户 ID" : "User ID"}</p>
+                <p className="font-semibold break-all">{payload.user.id}</p>
+              </div>
+              <div className="rounded-xl bg-zinc-50 border border-black/10 p-4">
+                <p className="text-xs text-black/50 mb-1">{isZh ? "注册时间" : "Created At"}</p>
+                <p className="font-semibold">{payload.user.createdAt ?? "-"}</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-black/10 bg-white p-6 mb-6">
+            <h2 className="font-bold mb-4">{isZh ? "工作空间状态" : "Workspace Status"}</h2>
+            <div className="space-y-3">
+              {payload.workspaceStatuses.map((item) => (
+                <div key={item.workspaceId} className="rounded-xl border border-black/10 p-4">
+                  <p className="font-semibold">{item.workspaceName}</p>
+                  <p className="text-xs text-black/50 break-all">{item.workspaceId}</p>
+                  <p className="text-sm mt-2">
+                    RC: {item.subscription ? `${item.subscription.planCode} (${item.subscription.status})` : "-"}
+                  </p>
+                  <p className="text-sm">
+                    RS: {item.selfHosted ? `${item.selfHosted.packageCode} (${item.selfHosted.status})` : "-"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </>
+      ) : null}
+
+      <section className="rounded-2xl border border-black/10 bg-white p-6">
+        <button
+          onClick={() => {
+            clearSession();
+            window.location.href = "/login";
+          }}
+          className="px-4 py-2 rounded-lg border border-black/20 text-sm font-semibold hover:bg-black/5"
+        >
+          {isZh ? "退出登录" : "Logout"}
+        </button>
+      </section>
     </div>
   );
 }

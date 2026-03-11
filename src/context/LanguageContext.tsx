@@ -33,7 +33,7 @@ const translations: TranslationDict = {
   },
   val_2_title: { zh: "快速部署", en: "Fast Deployment" },
   val_2_desc: {
-    zh: "RS 支持本地与云主机部署，RC 注册即用，几分钟内进入可执行状态。",
+    zh: "RS 支持本地与服务器部署；RC 注册即用，几分钟进入可执行状态。",
     en: "RS supports local/server deployment; RC is ready in minutes after signup."
   },
   val_3_title: { zh: "可运营可计费", en: "Operational & Billable" },

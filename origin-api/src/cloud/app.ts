@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { existsSync, statSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { z } from "zod";
@@ -104,7 +104,7 @@ const adminSubscriptionSchema = z
     planCode: z.string().min(1).optional(),
     status: z.enum(["active", "past_due", "paused", "canceled"]).optional()
   })
-  .refine((value) => value.planCode || value.status, {
+  .refine((value: { planCode?: string; status?: string }) => Boolean(value.planCode || value.status), {
     message: "planCode or status is required."
   });
 
@@ -266,6 +266,117 @@ interface SelfHostedArtifact {
   updatedAt: string;
 }
 
+const FALLBACK_INSTALLER_SH = `#!/usr/bin/env bash
+set -euo pipefail
+
+echo "RoleOS RS installer bootstrap"
+echo "Run the full installer from scripts/one-click-deploy.sh"
+bash "$(dirname "$0")/../scripts/one-click-deploy.sh"
+`;
+
+const FALLBACK_INSTALLER_PS1 = `$ErrorActionPreference = "Stop"
+
+Write-Host "RoleOS RS installer bootstrap"
+Write-Host "Run the full installer from scripts/one-click-deploy.ps1"
+powershell -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "..\\scripts\\one-click-deploy.ps1")
+`;
+
+const FALLBACK_CLOUD_SH = `#!/usr/bin/env bash
+set -euo pipefail
+
+echo "RoleOS cloud deploy bootstrap"
+echo "Run the full cloud deploy script from scripts/cloud-one-click-deploy.sh"
+bash "$(dirname "$0")/../scripts/cloud-one-click-deploy.sh"
+`;
+
+const FALLBACK_CLOUD_PS1 = `$ErrorActionPreference = "Stop"
+
+Write-Host "RoleOS cloud deploy bootstrap"
+Write-Host "Run the full cloud deploy script from scripts/cloud-one-click-deploy.ps1"
+powershell -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "..\\scripts\\cloud-one-click-deploy.ps1")
+`;
+
+const FALLBACK_README = `RoleOS Self-Hosted Artifacts
+
+This package includes cross-platform installer scripts for:
+- Windows
+- Linux
+- macOS
+
+You can also run cloud VM bootstrap scripts.
+Configure your model API key, OpenClaw endpoint, and channel credentials before deployment.
+`;
+
+function ensureFileFromTemplate(
+  absolutePath: string,
+  template: string,
+  encoding: BufferEncoding = "utf8"
+): void {
+  if (existsSync(absolutePath)) {
+    return;
+  }
+  writeFileSync(absolutePath, template, { encoding });
+}
+
+function ensureCopiedOrTemplate(
+  sourcePath: string,
+  targetPath: string,
+  fallbackTemplate: string
+): void {
+  if (existsSync(targetPath)) {
+    return;
+  }
+  if (existsSync(sourcePath)) {
+    copyFileSync(sourcePath, targetPath);
+    return;
+  }
+  writeFileSync(targetPath, fallbackTemplate, { encoding: "utf8" });
+}
+
+function ensureSelfHostedArtifacts(workspaceRoot: string): void {
+  const scriptsDir = join(workspaceRoot, "scripts");
+  const releaseDir = join(workspaceRoot, "release");
+  mkdirSync(scriptsDir, { recursive: true });
+  mkdirSync(releaseDir, { recursive: true });
+
+  const oneClickSh = join(scriptsDir, "one-click-deploy.sh");
+  const oneClickPs1 = join(scriptsDir, "one-click-deploy.ps1");
+  const cloudClickSh = join(scriptsDir, "cloud-one-click-deploy.sh");
+  const cloudClickPs1 = join(scriptsDir, "cloud-one-click-deploy.ps1");
+
+  ensureFileFromTemplate(oneClickSh, FALLBACK_INSTALLER_SH);
+  ensureFileFromTemplate(oneClickPs1, FALLBACK_INSTALLER_PS1);
+  ensureFileFromTemplate(cloudClickSh, FALLBACK_CLOUD_SH);
+  ensureFileFromTemplate(cloudClickPs1, FALLBACK_CLOUD_PS1);
+
+  ensureCopiedOrTemplate(
+    oneClickPs1,
+    join(releaseDir, "roleos-windows-installer.ps1"),
+    FALLBACK_INSTALLER_PS1
+  );
+  ensureCopiedOrTemplate(
+    oneClickSh,
+    join(releaseDir, "roleos-linux-installer.sh"),
+    FALLBACK_INSTALLER_SH
+  );
+  ensureCopiedOrTemplate(
+    oneClickSh,
+    join(releaseDir, "roleos-macos-installer.sh"),
+    FALLBACK_INSTALLER_SH
+  );
+  ensureCopiedOrTemplate(
+    cloudClickSh,
+    join(releaseDir, "roleos-cloud-linux-installer.sh"),
+    FALLBACK_CLOUD_SH
+  );
+  ensureCopiedOrTemplate(
+    cloudClickPs1,
+    join(releaseDir, "roleos-cloud-windows-installer.ps1"),
+    FALLBACK_CLOUD_PS1
+  );
+  ensureFileFromTemplate(join(releaseDir, "ROLEOS_SELF_HOSTED_README.txt"), FALLBACK_README);
+}
+
 function inferArtifactPlatform(fileName: string): SelfHostedArtifact["platform"] {
   const lower = fileName.toLowerCase();
   if (lower.includes("win") || lower.endsWith(".exe") || lower.endsWith(".ps1")) {
@@ -299,8 +410,16 @@ function buildSelfHostedArtifacts(workspaceRoot: string): SelfHostedArtifact[] {
     "release/roleos-linux-arm64",
     "release/roleos-darwin-arm64",
     "release/roleos-darwin-x64",
+    "release/roleos-windows-installer.ps1",
+    "release/roleos-linux-installer.sh",
+    "release/roleos-macos-installer.sh",
+    "release/roleos-cloud-linux-installer.sh",
+    "release/roleos-cloud-windows-installer.ps1",
+    "release/ROLEOS_SELF_HOSTED_README.txt",
     "scripts/one-click-deploy.ps1",
-    "scripts/one-click-deploy.sh"
+    "scripts/one-click-deploy.sh",
+    "scripts/cloud-one-click-deploy.ps1",
+    "scripts/cloud-one-click-deploy.sh"
   ];
   const results: SelfHostedArtifact[] = [];
 
@@ -399,7 +518,10 @@ export function createCloudApp(context: AppContext, options: CloudAppOptions) {
   const defaultPlanCode = options.defaultPlanCode ?? "starter";
   const personalGatewayBaseUrl =
     options.personalGatewayBaseUrl ?? "https://payments.local/checkout";
-  const selfHostedArtifacts = () => buildSelfHostedArtifacts(context.workspaceRoot);
+  const selfHostedArtifacts = () => {
+    ensureSelfHostedArtifacts(context.workspaceRoot);
+    return buildSelfHostedArtifacts(context.workspaceRoot);
+  };
 
   async function ensureRegistryReady(): Promise<void> {
     const syncResult = await context.registryService.sync();

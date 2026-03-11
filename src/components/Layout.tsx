@@ -66,7 +66,7 @@ export function Navbar() {
             <button
               onClick={() => setLanguage(isZh ? "en" : "zh")}
               className="p-2 text-black/60 hover:text-black transition-colors flex items-center space-x-1"
-              title={isZh ? "切换英文" : "Switch to Chinese"}
+              title={isZh ? "Switch to English" : "切换中文"}
             >
               <Languages className="w-4 h-4" />
               <span className="text-xs font-bold uppercase">{isZh ? "EN" : "中文"}</span>
@@ -189,9 +189,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-sm font-bold text-black mb-4 uppercase tracking-wider">
-              {isZh ? "产品" : "Product"}
-            </h4>
+            <h4 className="text-sm font-bold text-black mb-4 uppercase tracking-wider">{isZh ? "产品" : "Product"}</h4>
             <ul className="space-y-2">
               <li>
                 <Link to="/products" className="text-sm text-black/50 hover:text-black">

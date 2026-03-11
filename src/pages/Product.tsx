@@ -49,7 +49,7 @@ export default function Product() {
             {
               title: isZh ? "Team（怎么协作）" : "Team (How It Coordinates)",
               desc: isZh
-                ? "定义多角色之间的交接、检查点与成功标准，支撑复杂任务闭环。"
+                ? "定义多角色之间的交接、检查点与成功标准，支持复杂任务闭环。"
                 : "Defines handoff, checkpoints, and success criteria for multi-role collaboration.",
               icon: <Layers className="w-8 h-8" />,
               color: "bg-amber-500"
@@ -62,9 +62,7 @@ export default function Product() {
               transition={{ delay: i * 0.1 }}
               className="p-10 rounded-3xl border border-black/5 bg-white shadow-sm"
             >
-              <div
-                className={`w-16 h-16 ${item.color} text-white rounded-2xl flex items-center justify-center mb-8 shadow-lg`}
-              >
+              <div className={`w-16 h-16 ${item.color} text-white rounded-2xl flex items-center justify-center mb-8 shadow-lg`}>
                 {item.icon}
               </div>
               <h3 className="text-2xl font-bold mb-4">{item.title}</h3>

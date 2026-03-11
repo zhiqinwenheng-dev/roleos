@@ -55,22 +55,14 @@ export default function Docs() {
       return {
         title: isZh ? "RoleOS 文档中心" : "RoleOS Docs Center",
         summary: isZh
-          ? "文档不是概念展示，而是让用户在最短路径内完成“理解 → 部署 → 运行 → 运营”。"
+          ? "文档不是概念展示，而是让用户在最短路径内完成“理解 -> 部署 -> 运行 -> 运营”。"
           : "Docs are built for execution: understand, deploy, run, and operate quickly.",
         blocks: [
           {
             heading: isZh ? "平台定义" : "Platform Definition",
             points: isZh
-              ? [
-                  "RS = RoleOS Self-Hosted（自托管交付）",
-                  "RC = RoleOS Cloud（托管交付）",
-                  "RS 与 RC 共享一套 Role / Kit / Team 标准"
-                ]
-              : [
-                  "RS = RoleOS Self-Hosted",
-                  "RC = RoleOS Cloud",
-                  "RS and RC share one Role / Kit / Team standard"
-                ]
+              ? ["RS = RoleOS Self-Hosted（自托管交付）", "RC = RoleOS Cloud（托管交付）", "RS 与 RC 共享同一套 Role / Kit / Team 标准"]
+              : ["RS = RoleOS Self-Hosted", "RC = RoleOS Cloud", "RS and RC share one Role / Kit / Team standard"]
           },
           {
             heading: isZh ? "推荐阅读顺序" : "Recommended Reading Path",
@@ -85,9 +77,7 @@ export default function Docs() {
     if (active === "rs") {
       return {
         title: "RS · RoleOS Self-Hosted",
-        summary: isZh
-          ? "适用于需要私有化部署与运行时控制的团队。"
-          : "Best for teams requiring private deployment and runtime control.",
+        summary: isZh ? "适用于需要私有化部署与运行时控制的团队。" : "Best for teams requiring private deployment and runtime control.",
         blocks: [
           {
             heading: isZh ? "部署前准备" : "Before Deployment",
@@ -145,21 +135,15 @@ export default function Docs() {
 
     return {
       title: isZh ? "运营与计费文档" : "Operations & Billing",
-      summary: isZh
-        ? "围绕商用上线设计：审计、重试、订阅、成本与指标。"
-        : "Designed for commercial go-live: audit, retry, subscription, cost and metrics.",
+      summary: isZh ? "围绕商用上线设计：审计、重试、订阅、成本与指标。" : "Designed for commercial go-live: audit, retry, subscription, cost and metrics.",
       blocks: [
         {
           heading: isZh ? "关键观测项" : "Key Metrics",
-          points: isZh
-            ? ["run 成功率", "租户级审计日志", "订阅状态与成本统计"]
-            : ["run success rate", "tenant-level audit logs", "subscription and cost stats"]
+          points: isZh ? ["run 成功率", "租户级审计日志", "订阅状态与成本统计"] : ["run success rate", "tenant-level audit logs", "subscription and cost stats"]
         },
         {
           heading: isZh ? "后续扩展位（预留）" : "Reserved for Future",
-          points: isZh
-            ? ["多通道接入", "更多 Team 模板", "更细粒度计费规则"]
-            : ["multi-channel integration", "more Team templates", "finer-grained billing rules"]
+          points: isZh ? ["多通道接入", "更多 Team 模板", "更细粒度计费规则"] : ["multi-channel integration", "more Team templates", "finer-grained billing rules"]
         }
       ]
     };
@@ -192,9 +176,7 @@ export default function Docs() {
                   key={section.key}
                   onClick={() => setActive(section.key)}
                   className={`text-left rounded-2xl border p-3 transition-all ${
-                    selected
-                      ? "bg-black text-white border-black shadow"
-                      : "bg-zinc-50 border-black/10 text-black/70 hover:bg-black/5"
+                    selected ? "bg-black text-white border-black shadow" : "bg-zinc-50 border-black/10 text-black/70 hover:bg-black/5"
                   }`}
                 >
                   <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
@@ -234,14 +216,6 @@ export default function Docs() {
               ))}
             </div>
           </motion.div>
-        </section>
-
-        <section className="mt-10 text-center">
-          <p className="text-sm text-black/45">
-            {isZh
-              ? "后续将继续补充：行业模板、案例库、迁移指引、开放 API 示例。"
-              : "More sections coming soon: industry templates, case library, migration guide, and open API examples."}
-          </p>
         </section>
       </div>
     </div>

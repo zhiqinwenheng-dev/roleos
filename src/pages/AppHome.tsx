@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { fetchMe, fetchWorkspaceDashboard, readSession, type WorkspaceInfo } from "../lib/roleosApi";
+import {
+  fetchMe,
+  fetchWorkspaceDashboard,
+  readSession,
+  type WorkspaceDashboard,
+  type WorkspaceInfo
+} from "../lib/roleosApi";
 import { useTranslation } from "../context/LanguageContext";
 
 export default function AppHomePage() {
@@ -12,7 +18,7 @@ export default function AppHomePage() {
   const [email, setEmail] = useState("");
   const [workspaces, setWorkspaces] = useState<WorkspaceInfo[]>([]);
   const [workspaceId, setWorkspaceId] = useState("");
-  const [dashboard, setDashboard] = useState<Record<string, unknown> | null>(null);
+  const [dashboard, setDashboard] = useState<WorkspaceDashboard | null>(null);
 
   async function loadDashboard(targetWorkspaceId?: string) {
     const wid = targetWorkspaceId || workspaceId || workspaces[0]?.id;
@@ -63,15 +69,14 @@ export default function AppHomePage() {
     try {
       await loadDashboard(nextWorkspaceId);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : isZh ? "加载工作空间数据失败。" : "Failed to load workspace data."
-      );
+      setError(err instanceof Error ? err.message : isZh ? "加载工作空间失败。" : "Failed to load workspace data.");
     } finally {
       setLoading(false);
     }
   }
 
-  if (!readSession().token) {
+  const token = readSession().token;
+  if (!token) {
     return (
       <div className="pt-32 pb-24 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl bg-black text-white p-10">
@@ -94,6 +99,10 @@ export default function AppHomePage() {
     );
   }
 
+  const subscription = dashboard?.subscription;
+  const usage = dashboard?.usage;
+  const entitlement = dashboard?.selfHostedEntitlement;
+
   return (
     <div className="pt-24 pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <section className="rounded-3xl bg-gradient-to-r from-black via-zinc-900 to-zinc-700 text-white p-8 mb-6">
@@ -107,15 +116,13 @@ export default function AppHomePage() {
         <Link to="/app/self-hosted" className="rounded-2xl border border-black/10 bg-white p-5 hover:shadow-sm">
           <h2 className="font-bold mb-1">RS Console</h2>
           <p className="text-sm text-black/60">
-            {isZh
-              ? "管理 RS 授权状态、安装包下载与配置生成。"
-              : "Manage self-hosted entitlement, downloads, and config."}
+            {isZh ? "管理 RS 授权、下载与一键部署配置。" : "Manage RS entitlement, downloads, and deployment config."}
           </p>
         </Link>
         <Link to="/app/cloud" className="rounded-2xl border border-black/10 bg-white p-5 hover:shadow-sm">
           <h2 className="font-bold mb-1">RC Console</h2>
           <p className="text-sm text-black/60">
-            {isZh ? "在托管模式执行 Role / Kit / Team 工作流。" : "Run Role / Kit / Team flow in managed cloud mode."}
+            {isZh ? "在托管模式执行 Role / Kit / Team 流程。" : "Run Role / Kit / Team flow in managed cloud mode."}
           </p>
         </Link>
         <Link to="/app/billing" className="rounded-2xl border border-black/10 bg-white p-5 hover:shadow-sm">
@@ -132,7 +139,7 @@ export default function AppHomePage() {
         </Link>
       </section>
 
-      <section className="rounded-2xl border border-black/10 bg-white p-6">
+      <section className="rounded-2xl border border-black/10 bg-white p-6 mb-6">
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <label className="text-sm font-semibold">{isZh ? "工作空间" : "Workspace"}</label>
           <select
@@ -150,9 +157,45 @@ export default function AppHomePage() {
 
         {loading ? <p className="text-sm text-black/60">{isZh ? "加载中..." : "Loading..."}</p> : null}
         {error ? <p className="text-sm text-red-600 mb-3">{error}</p> : null}
-        <pre className="p-4 bg-zinc-950 text-zinc-100 rounded-xl text-xs overflow-auto min-h-[240px]">
-          {dashboard ? JSON.stringify(dashboard, null, 2) : isZh ? "暂无 dashboard 数据。" : "No dashboard data."}
-        </pre>
+
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="rounded-xl border border-black/10 bg-zinc-50 p-4">
+            <p className="text-xs text-black/50 mb-1">{isZh ? "RC 当前方案" : "Current RC Plan"}</p>
+            <p className="text-lg font-bold">{subscription?.plan?.name ?? "-"}</p>
+            <p className="text-xs text-black/50 mt-1">status: {subscription?.status ?? "-"}</p>
+          </div>
+          <div className="rounded-xl border border-black/10 bg-zinc-50 p-4">
+            <p className="text-xs text-black/50 mb-1">{isZh ? "本月运行" : "Runs This Month"}</p>
+            <p className="text-lg font-bold">{usage?.totalRuns ?? 0}</p>
+            <p className="text-xs text-black/50 mt-1">
+              {isZh ? "成功率" : "Success rate"}:{" "}
+              {usage && usage.totalRuns > 0 ? `${((usage.successRuns / usage.totalRuns) * 100).toFixed(1)}%` : "0%"}
+            </p>
+          </div>
+          <div className="rounded-xl border border-black/10 bg-zinc-50 p-4">
+            <p className="text-xs text-black/50 mb-1">RS</p>
+            <p className="text-lg font-bold">{entitlement?.status ?? (isZh ? "未激活" : "Not active")}</p>
+            <p className="text-xs text-black/50 mt-1">{entitlement?.packageCode ?? "rs-standard"}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-black/10 bg-white p-6">
+        <h3 className="font-bold mb-3">{isZh ? "最近活动" : "Recent Activity"}</h3>
+        <div className="grid md:grid-cols-3 gap-4 text-sm">
+          <div className="rounded-xl bg-zinc-50 border border-black/10 p-4">
+            <p className="text-black/50 mb-1">{isZh ? "最近运行" : "Recent Runs"}</p>
+            <p className="font-bold text-xl">{dashboard?.recentRuns?.length ?? 0}</p>
+          </div>
+          <div className="rounded-xl bg-zinc-50 border border-black/10 p-4">
+            <p className="text-black/50 mb-1">{isZh ? "最近订单" : "Recent Orders"}</p>
+            <p className="font-bold text-xl">{dashboard?.recentOrders?.length ?? 0}</p>
+          </div>
+          <div className="rounded-xl bg-zinc-50 border border-black/10 p-4">
+            <p className="text-black/50 mb-1">{isZh ? "审计事件" : "Audit Events"}</p>
+            <p className="font-bold text-xl">{dashboard?.auditEvents?.length ?? 0}</p>
+          </div>
+        </div>
       </section>
     </div>
   );

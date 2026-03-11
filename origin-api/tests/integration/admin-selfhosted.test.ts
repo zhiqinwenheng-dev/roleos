@@ -75,6 +75,13 @@ describe("admin and self-hosted APIs", () => {
       .set("Authorization", `Bearer ${token}`);
     expect(rsArtifacts.status).toBe(200);
     expect(Array.isArray(rsArtifacts.body.artifacts)).toBe(true);
+    expect(rsArtifacts.body.artifacts.length).toBeGreaterThanOrEqual(3);
+    const platforms = new Set(
+      (rsArtifacts.body.artifacts as Array<{ platform: string }>).map((artifact) => artifact.platform)
+    );
+    expect(platforms.has("windows")).toBe(true);
+    expect(platforms.has("linux")).toBe(true);
+    expect(platforms.has("macos")).toBe(true);
 
     const adminUsers = await request(app)
       .get("/admin/users?limit=10&offset=0")
@@ -121,4 +128,3 @@ describe("admin and self-hosted APIs", () => {
     expect(setSubscription.body.subscription.planCode).toBe("pro");
   });
 });
-

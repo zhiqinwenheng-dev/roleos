@@ -16,13 +16,7 @@ export default function Pricing() {
         ? "购买后下载部署包并在你的环境运行，适合私有化与可控生产。"
         : "Buy once, deploy in your own environment, suitable for private and controlled production.",
       features: isZh
-        ? [
-            "一键安装器与部署脚本",
-            "支持 Windows / macOS / Linux",
-            "Role / Kit / Team Starter Pack",
-            "部署文档与配置模板",
-            "长期可用授权"
-          ]
+        ? ["一键安装器与部署脚本", "支持 Windows / macOS / Linux", "Role / Kit / Team Starter Pack", "部署文档与配置模板", "长期可用授权"]
         : [
             "One-click installer and deploy scripts",
             "Windows / macOS / Linux support",
@@ -38,9 +32,7 @@ export default function Pricing() {
       name: "RC · Cloud BYOM",
       price: "0",
       period: isZh ? "试用后可继续免费" : "free after trial",
-      desc: isZh
-        ? "3 天免费试用，接入自有模型，适合快速上手与轻运营团队。"
-        : "3-day free trial with your own model, great for quick onboarding.",
+      desc: isZh ? "3 天免费试用，接入自有模型，适合快速上手与轻运营团队。" : "3-day free trial with your own model, great for quick onboarding.",
       features: isZh
         ? ["注册即用，无需部署", "3 天完整试用", "BYOM（自带模型）", "基础运行与审计能力", "可升级 Managed Model"]
         : [
@@ -58,9 +50,7 @@ export default function Pricing() {
       name: "RC · Managed Model",
       price: "39",
       period: isZh ? "每月" : "per month",
-      desc: isZh
-        ? "平台托管模型与运行策略，减少模型配置与运维成本。"
-        : "Platform-managed model and runtime policy with lower setup burden.",
+      desc: isZh ? "平台托管模型与运行策略，减少模型配置与运维成本。" : "Platform-managed model and runtime policy with lower setup burden.",
       features: isZh
         ? ["包含 BYOM 全部能力", "平台模型套餐", "持续更新与运维支持", "优先支持与稳定策略", "面向商用持续使用"]
         : [
@@ -101,9 +91,7 @@ export default function Pricing() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
             className={`relative p-8 rounded-3xl border ${
-              plan.highlight
-                ? "border-black bg-black text-white shadow-xl scale-105 z-10"
-                : "border-black/5 bg-white text-black"
+              plan.highlight ? "border-black bg-black text-white shadow-xl scale-105 z-10" : "border-black/5 bg-white text-black"
             }`}
           >
             {plan.highlight && (

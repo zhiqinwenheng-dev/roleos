@@ -92,19 +92,13 @@ export default function DownloadPage() {
           <p className="text-black/60 mb-6">
             {isZh
               ? "当前上线价为一次性 ¥199。支付后解锁 RS 授权、安装包下载、配置生成器和部署文档。"
-              : "Current launch price is CNY 199 one-time. Purchase unlocks RS entitlement, artifact downloads, config generator, and deployment guide."}
+              : "Current launch price is CNY ¥199 one-time. Purchase unlocks RS entitlement, artifact downloads, config generator, and deployment guide."}
           </p>
           <div className="space-y-3">
-            <Link
-              to="/app/self-hosted"
-              className="w-full block text-center py-3 bg-black text-white rounded-xl font-bold"
-            >
+            <Link to="/app/self-hosted" className="w-full block text-center py-3 bg-black text-white rounded-xl font-bold">
               {isZh ? "进入 RS 控制台" : "Open RS Console"}
             </Link>
-            <Link
-              to="/pricing"
-              className="w-full block text-center py-3 border border-black/15 rounded-xl font-bold"
-            >
+            <Link to="/pricing" className="w-full block text-center py-3 border border-black/15 rounded-xl font-bold">
               {isZh ? "查看定价" : "View Pricing"}
             </Link>
           </div>

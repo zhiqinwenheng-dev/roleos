@@ -1,0 +1,9 @@
+name = "roleos"
+compatibility_date = "2025-09-27"
+account_id = "3b1b01bfe53aab3591cba4b39edd99ba"
+main = "worker-entry.mjs"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
