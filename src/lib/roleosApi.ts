@@ -168,7 +168,8 @@ function resolveApiBase(): string {
     return "";
   }
 
-  return "https://api.roleos.ai";
+  // Use same-origin proxy in production deployments to avoid cross-origin failures.
+  return "/api";
 }
 
 const API_BASE = resolveApiBase();
