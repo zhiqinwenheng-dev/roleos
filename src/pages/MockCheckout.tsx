@@ -66,7 +66,18 @@ export default function MockCheckoutPage() {
         setMessage(isZh ? "已模拟支付失败。" : "Mock payment failed.");
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : isZh ? "支付确认失败。" : "Payment confirmation failed.");
+      const fallback = isZh
+        ? "支付确认失败。若提示 404，请先更新 origin-api 到最新版本以启用 mock-checkout 接口。"
+        : "Payment confirmation failed. If you see 404, upgrade origin-api to enable mock-checkout endpoint.";
+      if (error instanceof Error) {
+        if (error.message.includes("404")) {
+          setMessage(fallback);
+        } else {
+          setMessage(error.message);
+        }
+      } else {
+        setMessage(fallback);
+      }
     } finally {
       setBusy(false);
     }
